@@ -46,6 +46,14 @@ export type ResolvedFlowState = {
   key: string;
   projectId?: string;
   observationIds: readonly string[];
+  /**
+   * Field doc ids of the preset resolved for `draftObservation: {state:
+   * 'preset-selected'}`, in the same shape the real app passes to
+   * `ObservationFields`'s `fieldIds` route param (see
+   * `src/frontend/screens/ObservationCreate/index.tsx`). Undefined when no
+   * preset-selected draft was requested.
+   */
+  presetFieldIds?: readonly string[];
 };
 
 export const FLOW_STATES = {
@@ -239,6 +247,7 @@ export function useFlowState(spec?: FlowStateSpec): ResolvedFlowState | null {
       }
 
       const draftSpec = spec_.draftObservation;
+      let presetFieldIds: readonly string[] | undefined;
       if (draftSpec) {
         if (!projectId && draftSpec !== 'none') {
           throw new Error(
@@ -273,6 +282,7 @@ export function useFlowState(spec?: FlowStateSpec): ResolvedFlowState | null {
         } else {
           const preset = await resolvePointPreset(projectId!);
           if (cancelled) return;
+          presetFieldIds = preset.fieldRefs.map(fieldRef => fieldRef.docId);
 
           const expectedTags = {
             notes: '',
@@ -313,6 +323,7 @@ export function useFlowState(spec?: FlowStateSpec): ResolvedFlowState | null {
         key: buildKey(spec_),
         projectId,
         observationIds,
+        presetFieldIds,
       });
     }
 

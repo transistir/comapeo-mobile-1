@@ -58,14 +58,32 @@ const addPhotoState: InitialState = {
   index: 3,
 };
 
-const observationFieldsState: InitialState = {
-  routes: [
-    homeMapState.routes[0]!,
-    {name: 'ObservationCategoryChooser'},
-    {name: 'ObservationCreate'},
-    {name: 'ObservationFields', params: {question: 1}},
-  ],
-  index: 3,
+/**
+ * `fieldIds` is the same route param the real app passes from
+ * `ObservationCreate`/`ObservationEdit` (`preset.fieldRefs.map(f => f.docId)`)
+ * — read from the resolved flow state rather than hardcoded, since the seeded
+ * preset (and therefore its field ids) isn't known until `requireFields:
+ * true` resolves it.
+ */
+const observationFieldsState = (resolved: ResolvedFlowState): InitialState => {
+  if (!resolved.presetFieldIds || resolved.presetFieldIds.length === 0) {
+    throw new Error(
+      'Storybook flow expected a resolved preset with fields (requireFields: true) but presetFieldIds is empty',
+    );
+  }
+
+  return {
+    routes: [
+      homeMapState.routes[0]!,
+      {name: 'ObservationCategoryChooser'},
+      {name: 'ObservationCreate'},
+      {
+        name: 'ObservationFields',
+        params: {fieldIds: [...resolved.presetFieldIds]},
+      },
+    ],
+    index: 3,
+  };
 };
 
 const onboardedNoDraft = {

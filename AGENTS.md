@@ -17,11 +17,24 @@ Concretely:
 - `git push` must target the `transistir` remote, never `origin`. This
   includes tags (`git push --tags`), deletes (`git push --delete`), and
   force pushes — any write verb, not just plain pushes.
-- Any `gh` write operation — including but not limited to `gh pr
-  create/edit/close/merge`, `gh issue create/comment/close`, `gh release
-  create`, `gh workflow run`, `gh secret set`, `gh repo fork/edit`, and
-  `gh api` calls using `-X POST/PATCH/PUT/DELETE` — must target
-  `--repo transistir/comapeo-mobile-1`, never `digidem/comapeo-mobile`.
+- Any `gh` write operation must target `transistir/comapeo-mobile-1`, never
+  `digidem/comapeo-mobile` — but the flag for doing so differs by
+  subcommand, so use the form that command actually accepts:
+  - `gh pr create/edit/close/merge`, `gh issue create/comment/close`,
+    `gh release create`, `gh workflow run`, and `gh secret set` all accept
+    `-R/--repo transistir/comapeo-mobile-1`.
+  - `gh repo edit` takes the repository as a **positional** argument, not
+    `--repo`: `gh repo edit transistir/comapeo-mobile-1 ...`.
+  - `gh api` has **no `--repo`/`-R` flag at all**. Either use a
+    fully-qualified endpoint path — `gh api
+    repos/transistir/comapeo-mobile-1/...` — or set `GH_REPO=transistir/comapeo-mobile-1`
+    for the call. This applies to any write method (`-X POST/PATCH/PUT/DELETE`,
+    or `-f`/`-F` fields, which switch the request to `POST` by default).
+    Don't rely on the endpoint's placeholder expansion (`{owner}`/`{repo}`)
+    from the current directory — since `origin` still points at
+    `digidem/comapeo-mobile`, that would resolve to the upstream repo.
+  - `gh repo fork` is not applicable in this repo — `transistir` is already
+    the fork, so there's nothing to fork.
 - Before any push or `gh` write operation, double-check the target repo in
   the command itself — don't rely on defaults, since `gh` and bare `git push`
   both default to `origin`/the upstream-tracked repo unless told otherwise.

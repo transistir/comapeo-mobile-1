@@ -132,6 +132,31 @@ native_readiness_matches() {
   esac
 }
 
+# Under emulator resource pressure, Android's own "isn't responding" ANR
+# dialog (e.g. for Pixel Launcher, unrelated to our app) can appear as a
+# system-level overlay and block every readiness check indefinitely, even
+# though the app screen underneath is already correct. Dismiss it via its
+# "Wait" button and let the caller's own poll loop re-check — this is not a
+# real failure, just a transient system hiccup to wait out.
+dismiss_anr_dialog_if_present() {
+  local hierarchy=$1
+  local bounds
+
+  grep -Fq 'resource-id="android:id/aerr_wait"' <<<"$hierarchy" || return 1
+
+  bounds=$(grep -oE 'resource-id="android:id/aerr_wait"[^>]*bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' <<<"$hierarchy" |
+    grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -n1)
+
+  if [[ $bounds =~ ^\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]$ ]]; then
+    local center_x=$(( (${BASH_REMATCH[1]} + ${BASH_REMATCH[3]}) / 2 ))
+    local center_y=$(( (${BASH_REMATCH[2]} + ${BASH_REMATCH[4]}) / 2 ))
+    echo "storybook-capture: dismissing an 'isn't responding' system dialog (tapping Wait)..." >&2
+    adb shell input tap "$center_x" "$center_y" >/dev/null 2>&1
+    sleep 1
+  fi
+  return 0
+}
+
 # `uiautomator dump` is flaky under emulator memory pressure: the on-device
 # helper is sometimes reaped by the guest low-memory killer, or the pull races
 # a still-forming window, which surfaces as an empty/truncated read (not valid
@@ -139,11 +164,12 @@ native_readiness_matches() {
 # failure worth a short retry, bounded by time rather than attempt count since
 # one dump takes anywhere from under a second to several seconds on a loaded
 # emulator. A well-formed dump that simply lacks the marker is not retried —
-# that's real evidence the screen changed, and this check exists specifically
-# to catch that between/around the screenshot.
+# unless it's a dismissible system ANR dialog covering the real screen, that's
+# real evidence the screen changed, and this check exists specifically to
+# catch that between/around the screenshot.
 assert_current_native_readiness() {
   local timing=$1
-  local dump_deadline=$((SECONDS + 15))
+  local dump_deadline=$((SECONDS + 30))
   local hierarchy
 
   while :; do
@@ -155,6 +181,10 @@ assert_current_native_readiness() {
     fi
     if native_readiness_matches "$hierarchy"; then
       return 0
+    fi
+    if dismiss_anr_dialog_if_present "$hierarchy"; then
+      (( SECONDS < dump_deadline )) || break
+      continue
     fi
     echo "storybook-capture: current native readiness check failed $timing for story: $story_id; expected: $ready_target" >&2
     return 1
@@ -189,6 +219,9 @@ while (( SECONDS < deadline )); do
           native_readiness_matches "$ui_dump"; then
           capture_ready=true
           break
+        fi
+        if [[ -n ${ui_dump:-} ]]; then
+          dismiss_anr_dialog_if_present "$ui_dump" || true
         fi
         ui_probe_at=$((SECONDS + 2))
       fi

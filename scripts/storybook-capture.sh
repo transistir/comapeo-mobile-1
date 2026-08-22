@@ -207,6 +207,16 @@ while (( SECONDS < deadline )); do
 done
 
 if [[ $capture_ready != true ]]; then
+  # The readiness probe above logs nothing about *why* it never matched, and
+  # by the time this fails the device state that would explain it is gone.
+  # Capture it now, alongside the screenshot, so a timeout is diagnosable
+  # from the uploaded artifact instead of a second round of guessing.
+  failure_prefix="${output_path%.png}"
+  adb logcat -d -v time >"$failure_prefix.failure-logcat.txt" 2>&1 || true
+  timeout 10 adb exec-out uiautomator dump /dev/tty >"$failure_prefix.failure-hierarchy.xml" 2>/dev/null || true
+  adb exec-out screencap -p >"$failure_prefix.failure-screen.png" 2>/dev/null || true
+  echo "storybook-capture: wrote failure diagnostics next to $output_path" >&2
+
   if [[ $identity_seen != true ]]; then
     echo "storybook-capture: timed out waiting for story selection: $expected_identity_log" >&2
   elif [[ $ready_kind == testID ]]; then

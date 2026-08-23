@@ -11,6 +11,13 @@ There are two different kinds of stories in this Storybook:
   render `null` (or a short, non-essential legend). The decorator renders
   everything visible; do not put a second screen or navigator in the story
   function.
+- **Non-route flow stories** exercise something the capture manifest lists
+  that isn't a navigation route — `DrawerMenu` (rendered by
+  `react-native-drawer-layout` with component-local open/closed state, so
+  `withRealNavigator`'s `initialState` can't reach it) or a purely
+  presentational leaf component fixtured with props. Use `withFlowState`,
+  described below, combined with `withNavigation` (or another navigation
+  decorator) when the component also calls navigation hooks.
 
 ## Flow story shape
 
@@ -46,6 +53,23 @@ The `lockedApp`/`auth: 'unauthenticated'` preset is currently limited: changing
 the passcode does not update `AuthContext`'s already-mounted auth state. Use a
 fresh app boot when a flow must visibly start at `AuthScreen`.
 
+## withFlowState (non-route flow stories)
+
+`withFlowState` is the flow-state half of `withRealNavigator`, without the
+navigator. It applies `parameters.flow.state` the same way, but doesn't mount
+`RootStackNavigator` and has no `initialState` concept, since there's no
+navigator to seed a back-stack in.
+
+`scripts/storybook-capture.sh` requires the `STORYBOOK.flow-ready.<storyId>`
+marker to be present in the Android UI hierarchy for **every** manifest row,
+whatever readiness target that row uses. `withRealNavigator` was previously
+the only decorator that rendered it; `withFlowState` now renders the same
+marker, so any non-route story can be captured too.
+
+`parameters.flow.state` is optional on `withFlowState`: a leaf story that
+needs no seeded backend state can use the decorator purely to obtain the
+marker (`useFlowState(undefined)` resolves on the first render).
+
 After adding or renaming stories, regenerate Storybook's story index before
 selecting or deep-linking to them:
 
@@ -79,6 +103,12 @@ current Android UI hierarchy. The markers are updated by the navigator's
 current-state callbacks; a historical route log cannot certify a later frame.
 The Home story uses the story-specific marker plus `MAIN.map-screen` because
 the root route is `Home` while the visible nested tab is `Map`.
+
+Choose `route:<Name>` for a story on a plain stack screen reached through
+`withRealNavigator`'s `initialState`. Choose a `testID:` marker for anything
+rendered inside `Home`'s nested tab navigator (as above, since its current
+route isn't `Home`) or for any `withFlowState` story, since a non-route
+story has no navigator route to certify against.
 
 The capture command validates every runtime ID against the source story index,
 requires exact story selection before checking the target, captures each row in

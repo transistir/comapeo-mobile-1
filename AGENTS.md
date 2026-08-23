@@ -89,5 +89,19 @@ hierarchy. They cannot see something covering the screen. A run has reported
 45% of 20 consecutive frames, with every automated check green. A green run
 means the pipeline worked, never that the screenshots are good — open them.
 
-To add another harness, symlink its skills directory at these, rather than
-copying the files.
+## Adding a skill
+
+Skills live in `.agents/skills/<name>/SKILL.md`. That is the location Codex,
+Cursor, OpenCode, Zed and Gemini CLI all read (Codex scans it from the
+working directory up to the repo root). Claude Code reads only
+`.claude/skills/`, so each skill is symlinked there — it follows symlinks and
+loads the target, which is the same arrangement used at the user level. Add a
+harness by symlinking its skills directory at `.agents/skills/`, never by
+copying the file.
+
+Keep frontmatter to the six fields the open Agent Skills spec defines:
+`name`, `description`, `license`, `compatibility`, `metadata`,
+`allowed-tools`. Only the first two are required. Claude Code accepts roughly
+twenty additional fields, but a file using any of them is rejected outright
+by the Skills API and by other tools — so a Claude-only field silently costs
+portability. The skills here use `name` and `description` only.

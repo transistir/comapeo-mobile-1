@@ -168,7 +168,14 @@ export const Language: Story = {
   },
 };
 
-/** The coordinate format picker with live-formatted examples. */
+/**
+ * The coordinate format picker with live-formatted examples.
+ *
+ * Not byte-stable across runs: the examples are formatted from
+ * `useLastKnownLocation`, falling back to a hardcoded `EXAMPLE_LOCATION`
+ * only when no fix is available — so a runner with a GPS fix and one
+ * without produce different frames. Compare this frame by eye, not by size.
+ */
 export const CoordinateFormat: Story = {
   name: '05 Coordinate Format',
   parameters: {
@@ -243,7 +250,14 @@ export const PrivacyPolicy: Story = {
   },
 };
 
-/** The About CoMapeo screen with device/build info and app links. */
+/**
+ * The About CoMapeo screen with device/build info and app links.
+ *
+ * Not byte-stable across runs: the version, build number, Android build id
+ * and phone model come from native device-info modules, so they differ
+ * between emulator images and between app builds. Compare this frame by
+ * eye, not by size.
+ */
 export const About: Story = {
   name: '14 About',
   parameters: {

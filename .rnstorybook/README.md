@@ -110,6 +110,17 @@ rendered inside `Home`'s nested tab navigator (as above, since its current
 route isn't `Home`) or for any `withFlowState` story, since a non-route
 story has no navigator route to certify against.
 
+Before each screenshot the capture command dismisses the Android soft
+keyboard if one is showing. Storybook switches stories through a deep link
+and never closes the IME, so a keyboard raised by one story (an autofocused
+`TextInput`, for example) otherwise stays up and covers the bottom of every
+later story's frame — and no readiness marker catches it, because the markers
+assert route/testID presence, not occlusion. A keyboard that will not close
+fails the capture rather than producing an occluded frame. One consequence
+worth knowing when reviewing frames: the text-entry screens (device name
+edit, set passcode) are captured with their form fully visible and no
+keyboard over it.
+
 The capture command validates every runtime ID against the source story index,
 requires exact story selection before checking the target, captures each row in
 order, and writes the deterministic `captures.tsv` ledger. It rechecks the

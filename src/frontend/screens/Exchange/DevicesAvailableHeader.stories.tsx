@@ -1,9 +1,9 @@
 import type {Meta, StoryObj} from '@storybook/react-native';
-import {View} from 'react-native';
 
 import {DevicesAvailableHeader} from './DevicesAvailableHeader';
 import {BLUE_GREY, DARK_ORANGE} from '../../lib/styles';
 import {withFlowState} from '../../../../.rnstorybook/decorators/withFlowState';
+import {ComponentSwatch} from '../../../../.rnstorybook/utils/ComponentSwatch';
 
 /**
  * Leaf stories. `DevicesAvailableHeader` is purely presentational (no
@@ -13,12 +13,14 @@ import {withFlowState} from '../../../../.rnstorybook/decorators/withFlowState';
  * `overlayType` from the device's archive setting) — states that cannot be
  * reproduced deterministically as a flow story on a CI emulator with no
  * real WiFi peers (see `Flows/Exchange`'s `MainScreen` doc comment).
- * A wrapping `testID` view (rather than editing app source) gives the
- * capture pipeline a stable readiness marker for each story's own state,
- * and `withFlowState` supplies the `STORYBOOK.flow-ready.<story_id>` marker
- * every manifest row requires (`scripts/storybook-capture.sh`
- * `native_readiness_matches`) — no `flow.state` needed since these fixture
- * props directly rather than seeding backend state.
+ * `ComponentSwatch` (rather than editing app source) presents the component
+ * as a centred swatch — on its own it is an 80x80 icon that would sit
+ * stranded in a corner of the frame — and carries the readiness marker for
+ * each story's own state. `withFlowState` supplies
+ * the `STORYBOOK.flow-ready.<story_id>` marker every manifest row requires
+ * (`scripts/storybook-capture.sh` `native_readiness_matches`) — no
+ * `flow.state` needed since these fixture props directly rather than
+ * seeding backend state.
  */
 const meta = {
   title: 'Exchange/DevicesAvailableHeader',
@@ -38,9 +40,9 @@ export const NoDevicesFound: Story = {
     showOverlay: false,
   },
   render: args => (
-    <View testID="EXCHANGE.devices-available-header">
+    <ComponentSwatch testID="EXCHANGE.devices-available-header">
       <DevicesAvailableHeader {...args} />
-    </View>
+    </ComponentSwatch>
   ),
 };
 
@@ -53,9 +55,9 @@ export const DevicesFoundPreviews: Story = {
     showOverlay: true,
   },
   render: args => (
-    <View testID="EXCHANGE.devices-available-header">
+    <ComponentSwatch testID="EXCHANGE.devices-available-header">
       <DevicesAvailableHeader {...args} />
-    </View>
+    </ComponentSwatch>
   ),
 };
 
@@ -68,8 +70,8 @@ export const DevicesFoundEverything: Story = {
     showOverlay: true,
   },
   render: args => (
-    <View testID="EXCHANGE.devices-available-header">
+    <ComponentSwatch testID="EXCHANGE.devices-available-header">
       <DevicesAvailableHeader {...args} />
-    </View>
+    </ComponentSwatch>
   ),
 };

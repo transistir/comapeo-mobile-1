@@ -1,15 +1,20 @@
+---
+name: comapeo-storybook-capture-gate
+description: Run the Storybook capture workflow for a PR, review every captured frame with vision, fix what it finds, and post the verdict plus an artifact download link on the PR. Use when a PR adds or changes Storybook stories, the capture manifest, or the capture scripts.
+---
 
 # Storybook capture gate for a PR
 
 Advisory, not blocking. The capture workflow is `workflow_dispatch` only and
 is deliberately not a required check — a run costs 30-50 minutes and the
-emulator infrastructure produces spurious failures. This document is the
+emulator infrastructure produces spurious failures. This skill is the
 procedure that makes it a real gate anyway: an agent runs it, *looks* at the
 frames, fixes what it finds, and leaves the evidence on the PR.
 
-For the capture pipeline's own mechanics and CI gotchas, see
-[`storybook-capture.md`](./storybook-capture.md). This document is the
-PR-cycle wrapper around it.
+For the capture pipeline's own mechanics and CI gotchas, see the
+`comapeo-storybook-capture` skill
+([`../comapeo-storybook-capture/SKILL.md`](../comapeo-storybook-capture/SKILL.md)).
+This skill is the PR-cycle wrapper around it.
 
 **Remote safety:** every `gh` write targets `transistir/comapeo-mobile-1`.
 See AGENTS.md — never write to `digidem/*`.

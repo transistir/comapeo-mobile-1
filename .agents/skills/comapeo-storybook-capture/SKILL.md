@@ -1,6 +1,11 @@
+---
+name: comapeo-storybook-capture
+description: Generate and verify CoMapeo React Native Storybook flow screenshots with deterministic readiness and durable acceptance evidence.
+---
+
 # CoMapeo Storybook capture
 
-Use this guide when regenerating the Storybook bundle, launching the
+Use this skill when regenerating the Storybook bundle, launching the
 Android app, or collecting the documented user-flow screenshots.
 
 ## Golden path

@@ -4,7 +4,10 @@ There are two different kinds of stories in this Storybook:
 
 - **Leaf stories** exercise one screen or component in isolation. Use the
   `withNavigation` decorator when the component needs ordinary navigation
-  context. The decorator mounts the story component inside its small stack.
+  context. The decorator mounts the story component inside its small stack,
+  hides the header by default, and accepts per-story screen options through
+  `parameters.navigation.options` when the real app header is part of the
+  capture.
 - **Flow stories** exercise a user journey through the app's real navigation.
   Use `withRealNavigator`. The real `RootStackNavigator` is mounted by the
   decorator, so the story function is only a Storybook placeholder and should
@@ -14,10 +17,10 @@ There are two different kinds of stories in this Storybook:
 - **Non-route flow stories** exercise something the capture manifest lists
   that isn't a navigation route — `DrawerMenu` (rendered by
   `react-native-drawer-layout` with component-local open/closed state, so
-  `withRealNavigator`'s `initialState` can't reach it) or a purely
-  presentational leaf component fixtured with props. Use `withFlowState`,
-  described below, combined with `withNavigation` (or another navigation
-  decorator) when the component also calls navigation hooks.
+  `withRealNavigator`'s `initialState` can't reach it) or a full screen whose
+  live presentation state cannot be seeded through `FlowStateSpec`. Use
+  `withFlowState`, described below, combined with `withNavigation` (or another
+  navigation decorator) when the component also calls navigation hooks.
 
 ## Flow story shape
 
@@ -66,9 +69,24 @@ whatever readiness target that row uses. `withRealNavigator` was previously
 the only decorator that rendered it; `withFlowState` now renders the same
 marker, so any non-route story can be captured too.
 
-`parameters.flow.state` is optional on `withFlowState`: a leaf story that
-needs no seeded backend state can use the decorator purely to obtain the
-marker (`useFlowState(undefined)` resolves on the first render).
+`parameters.flow.state` is optional on `withFlowState`: a story that needs no
+seeded backend state can use the decorator purely to obtain the marker
+(`useFlowState(undefined)` resolves on the first render).
+
+### Exchange full-screen state fixtures
+
+`Exchange/Screen` replaces the removed `Exchange/DevicesAvailableHeader` and
+`Exchange/WifiCard` leaf stories. Each story renders the complete
+`ExchangeScreenContent` composition, including the app's real navigation
+header, against an `onboardedWithData` project.
+
+`ExchangeScreenContent` exposes an optional Storybook-only `overrides` prop for
+live values that cannot be seeded on a CI emulator: Wi-Fi SSID, sync progress,
+archive-device status, and remote-archive connection status. A story may use
+this seam only when it renders the real full screen and the desired state has
+no `FlowStateSpec` axis. Every field is optional; `undefined` preserves the
+hook's live value, including for fields where `null` is a meaningful fixture.
+The shipping `SyncScreen` never passes the prop.
 
 After adding or renaming stories, regenerate Storybook's story index before
 selecting or deep-linking to them:

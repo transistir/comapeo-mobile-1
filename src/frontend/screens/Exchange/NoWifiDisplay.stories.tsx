@@ -3,6 +3,8 @@ import {View} from 'react-native';
 
 import {NoWifiDisplay} from './NoWifiDisplay';
 import {withFlowState} from '../../../../.rnstorybook/decorators/withFlowState';
+import {withNavigation} from '../../../../.rnstorybook/decorators/withNavigation';
+import {NavigatorScreenOptions} from '../../Navigation/Stack';
 
 /**
  * Leaf story. `NoWifiDisplay` is purely presentational (an `onGoBack`
@@ -17,11 +19,25 @@ import {withFlowState} from '../../../../.rnstorybook/decorators/withFlowState';
  * nested `flex: 1` views compose fine here since `NoWifiDisplay` itself
  * already expects to fill the screen (it renders a `ScreenContentWithDock`
  * with `flex: 1`).
+ *
+ * `withNavigation` supplies the app's real `Exchange` header. In production
+ * this component is returned by `SyncScreen` from the registered `Sync`
+ * route (`src/frontend/screens/Exchange/index.tsx`), which sets
+ * `headerTitle: intl(SyncScreen.navTitle)` in
+ * `Navigation/Stack/AppScreens.tsx` — so a headerless capture would have
+ * extra vertical space and could not expose header-related clipping. The
+ * screen options are the same ones `Exchange/Screen` uses, reusing the
+ * exported `NavigatorScreenOptions` rather than restating them.
  */
 const meta = {
   title: 'Exchange/NoWifiDisplay',
   component: NoWifiDisplay,
-  decorators: [withFlowState],
+  decorators: [withFlowState, withNavigation],
+  parameters: {
+    navigation: {
+      options: {...NavigatorScreenOptions, headerTitle: 'Exchange'},
+    },
+  },
 } satisfies Meta<typeof NoWifiDisplay>;
 
 export default meta;

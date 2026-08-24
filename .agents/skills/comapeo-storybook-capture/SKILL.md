@@ -35,11 +35,18 @@ Android app, or collecting the documented user-flow screenshots.
    node scripts/storybook-report.mjs /tmp/storybook-captures-<run>
    ```
 
-4. A usable run contains 12 PNGs, `captures.tsv`, the flow reports,
-   `cold-start-provenance.txt`, and the leaf-recovery PNG. Compare ledger
-   identity/order fields across independent cold runs before accepting the
-   result. Inspect onboarding PNGs to ensure they show named screens rather
-   than `FlowStatePlaceholder`.
+4. A usable run contains one PNG per manifest row — never a fixed number, the
+   manifest is the source of truth and grows — plus `captures.tsv`, the flow
+   reports, `cold-start-provenance.txt`, and the leaf-recovery PNG:
+
+   ```sh
+   find /tmp/storybook-captures-<run> -name '*.png' | wc -l
+   wc -l < .rnstorybook/capture-manifest.tsv   # must match
+   ```
+
+   Compare ledger identity/order fields across independent cold runs before
+   accepting the result. Inspect onboarding PNGs to ensure they show named
+   screens rather than `FlowStatePlaceholder`.
 
 ## Disposable local environment
 
@@ -57,7 +64,8 @@ Android app, or collecting the documented user-flow screenshots.
 
 - A capture that stops at a current native readiness check is partial, even
   when earlier PNGs exist. Preserve that directory and record the first
-  failing story; do not report it as a complete 12-screen generation.
+  failing story; do not report it as a complete generation. A generation is
+  complete only when its PNG count equals the manifest row count.
 
 ## Known failure handling
 

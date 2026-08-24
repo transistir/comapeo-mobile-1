@@ -316,21 +316,23 @@ while :; do
   # Readiness markers cannot see occlusion, so re-verify the keyboard after
   # settling rather than only before the delay.
   if ! soft_keyboard_is_shown; then
-    break
+    if [[ -n $ready_kind ]]; then
+      assert_current_native_readiness 'immediately before screenshot' || exit 1
+    fi
+
+    if ! soft_keyboard_is_shown; then
+      break
+    fi
   fi
 
   if (( settle_pass >= 3 )); then
     write_capture_failure_diagnostics
-    echo "storybook-capture: aborting capture for story: $story_id because the soft keyboard kept reappearing during the settle delay" >&2
+    echo "storybook-capture: aborting capture for story: $story_id because the soft keyboard kept reappearing during the settle delay or readiness probe" >&2
     exit 1
   fi
 
   settle_pass=$((settle_pass + 1))
 done
-
-if [[ -n $ready_kind ]]; then
-  assert_current_native_readiness 'immediately before screenshot' || exit 1
-fi
 
 remote_path=/sdcard/storybook-capture.png
 temporary_path="$temporary_dir/storybook-capture.png"
@@ -338,6 +340,14 @@ adb shell screencap -p "$remote_path"
 
 if [[ -n $ready_kind ]]; then
   assert_current_native_readiness 'immediately after screenshot' || exit 1
+fi
+
+# A sub-millisecond window between the final check and screencap is
+# irreducible; this post-shot check closes the multi-second occlusion races.
+if soft_keyboard_is_shown; then
+  write_capture_failure_diagnostics
+  echo "storybook-capture: aborting capture for story: $story_id because a soft keyboard appeared around the screenshot" >&2
+  exit 1
 fi
 
 adb pull "$remote_path" "$temporary_path" >/dev/null

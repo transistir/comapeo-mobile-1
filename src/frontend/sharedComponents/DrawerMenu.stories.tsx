@@ -1,9 +1,13 @@
 import type {Meta, StoryObj} from '@storybook/react-native';
+import {useWindowDimensions, View} from 'react-native';
+import {Drawer} from 'react-native-drawer-layout';
 import {withFlowState} from '../../../.rnstorybook/decorators/withFlowState';
 import {withNavigation} from '../../../.rnstorybook/decorators/withNavigation';
 import {FLOW_STATES} from '../../../.rnstorybook/utils/flowState';
 import {ActiveProjectProvider} from '../contexts/ActiveProjectContext';
 import {useActiveProjectId} from '../contexts/ActiveProjectIdStoreContext';
+import {VERY_LIGHT_GREY} from '../lib/styles';
+import {getDrawerWidth} from '../Navigation/Tab';
 import {DrawerMenu} from './DrawerMenu';
 
 /**
@@ -16,6 +20,12 @@ import {DrawerMenu} from './DrawerMenu';
  * itself using the resolved `activeProjectId` — mirroring exactly what
  * `RootStackNavigator` does once a project is active (see
  * `src/frontend/Navigation/Stack/index.tsx`).
+ *
+ * The story mounts its own `Drawer` with `open` hard-coded, sidestepping the
+ * unreachable local state while preserving the library's production layout.
+ * It reuses `getDrawerWidth` so captures track the real drawer width instead
+ * of duplicating its arithmetic. The drawer children are a deliberate filler
+ * for `Tab.Navigator`, not the real tab content.
  *
  * `withNavigation` alone doesn't provide `ActiveProjectProvider` (see that
  * decorator's own docblock), and `fullApp` wouldn't either: `AppProviders`
@@ -34,12 +44,25 @@ import {DrawerMenu} from './DrawerMenu';
  */
 function DrawerMenuStory() {
   const activeProjectId = useActiveProjectId();
+  const drawerWidth = getDrawerWidth(useWindowDimensions().width);
   if (!activeProjectId) return null;
 
   return (
-    <ActiveProjectProvider activeProjectId={activeProjectId}>
-      <DrawerMenu closeMenu={() => {}} />
-    </ActiveProjectProvider>
+    <Drawer
+      open
+      onOpen={() => {}}
+      onClose={() => {}}
+      drawerType="slide"
+      swipeEnabled={false}
+      drawerStyle={{width: drawerWidth, maxWidth: drawerWidth}}
+      renderDrawerContent={() => (
+        <ActiveProjectProvider activeProjectId={activeProjectId}>
+          <DrawerMenu closeMenu={() => {}} />
+        </ActiveProjectProvider>
+      )}>
+      {/* Deliberately stands in for Tab.Navigator without mounting real tabs. */}
+      <View style={{flex: 1, backgroundColor: VERY_LIGHT_GREY}} />
+    </Drawer>
   );
 }
 

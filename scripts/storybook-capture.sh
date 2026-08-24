@@ -157,6 +157,12 @@ dismiss_anr_dialog_if_present() {
   return 0
 }
 
+soft_keyboard_is_shown() {
+  local input_method_dump
+  input_method_dump=$(adb shell dumpsys input_method 2>/dev/null) || return 1
+  grep -q 'mInputShown=true' <<<"$input_method_dump"
+}
+
 # Storybook switches stories with a deep link and never dismisses the
 # on-screen keyboard, so an IME raised by one story (e.g. an autofocused
 # `TextInput`) stays open and covers the bottom of every screenshot taken by
@@ -168,23 +174,27 @@ dismiss_anr_dialog_if_present() {
 # navigation stack and would change the captured route on any row where no
 # keyboard is actually showing, which is most rows.
 dismiss_soft_keyboard_if_shown() {
-  local input_method_dump
-
-  input_method_dump=$(adb shell dumpsys input_method 2>/dev/null) || return 0
-  grep -q 'mInputShown=true' <<<"$input_method_dump" || return 0
+  soft_keyboard_is_shown || return 0
 
   echo "storybook-capture: dismissing an open soft keyboard..." >&2
   adb shell input keyevent 111 >/dev/null 2>&1 || true
 
   local dismiss_deadline=$((SECONDS + 5))
   while (( SECONDS < dismiss_deadline )); do
-    input_method_dump=$(adb shell dumpsys input_method 2>/dev/null) || input_method_dump=
-    grep -q 'mInputShown=true' <<<"$input_method_dump" || return 0
+    soft_keyboard_is_shown || return 0
     sleep 0.5
   done
 
   echo "storybook-capture: soft keyboard is still shown after KEYCODE_ESCAPE for story: $story_id" >&2
   return 1
+}
+
+write_capture_failure_diagnostics() {
+  local failure_prefix="${output_path%.png}"
+  adb logcat -d -v time >"$failure_prefix.failure-logcat.txt" 2>&1 || true
+  timeout 10 adb exec-out uiautomator dump /dev/tty >"$failure_prefix.failure-hierarchy.xml" 2>/dev/null || true
+  adb exec-out screencap -p >"$failure_prefix.failure-screen.png" 2>/dev/null || true
+  echo "storybook-capture: wrote failure diagnostics next to $output_path" >&2
 }
 
 # `uiautomator dump` is flaky under emulator memory pressure: the on-device
@@ -274,11 +284,7 @@ if [[ $capture_ready != true ]]; then
   # by the time this fails the device state that would explain it is gone.
   # Capture it now, alongside the screenshot, so a timeout is diagnosable
   # from the uploaded artifact instead of a second round of guessing.
-  failure_prefix="${output_path%.png}"
-  adb logcat -d -v time >"$failure_prefix.failure-logcat.txt" 2>&1 || true
-  timeout 10 adb exec-out uiautomator dump /dev/tty >"$failure_prefix.failure-hierarchy.xml" 2>/dev/null || true
-  adb exec-out screencap -p >"$failure_prefix.failure-screen.png" 2>/dev/null || true
-  echo "storybook-capture: wrote failure diagnostics next to $output_path" >&2
+  write_capture_failure_diagnostics
 
   if [[ $identity_seen != true ]]; then
     echo "storybook-capture: timed out waiting for story selection: $expected_identity_log" >&2
@@ -290,24 +296,37 @@ if [[ $capture_ready != true ]]; then
   exit 1
 fi
 
-if ! dismiss_soft_keyboard_if_shown; then
-  # Same failure-diagnostics shape as the readiness-timeout branch above, so
-  # a stuck keyboard is just as diagnosable from the uploaded CI artifact as
-  # any other capture failure. Failing here (rather than warning and
-  # continuing) is deliberate: this check exists specifically because the
-  # existing readiness markers already passed while the keyboard covered the
-  # screen, so a warning would just reproduce the silent-degradation bug
-  # this is fixing.
-  failure_prefix="${output_path%.png}"
-  adb logcat -d -v time >"$failure_prefix.failure-logcat.txt" 2>&1 || true
-  timeout 10 adb exec-out uiautomator dump /dev/tty >"$failure_prefix.failure-hierarchy.xml" 2>/dev/null || true
-  adb exec-out screencap -p >"$failure_prefix.failure-screen.png" 2>/dev/null || true
-  echo "storybook-capture: wrote failure diagnostics next to $output_path" >&2
-  echo "storybook-capture: aborting capture for story: $story_id because a soft keyboard would occlude the screenshot" >&2
-  exit 1
-fi
+settle_pass=1
+while :; do
+  if ! dismiss_soft_keyboard_if_shown; then
+    # Same failure-diagnostics shape as the readiness-timeout branch above, so
+    # a stuck keyboard is just as diagnosable from the uploaded CI artifact as
+    # any other capture failure. Failing here (rather than warning and
+    # continuing) is deliberate: this check exists specifically because the
+    # existing readiness markers already passed while the keyboard covered the
+    # screen, so a warning would just reproduce the silent-degradation bug
+    # this is fixing.
+    write_capture_failure_diagnostics
+    echo "storybook-capture: aborting capture for story: $story_id because a soft keyboard would occlude the screenshot" >&2
+    exit 1
+  fi
 
-sleep "$settle_delay"
+  sleep "$settle_delay"
+
+  # Readiness markers cannot see occlusion, so re-verify the keyboard after
+  # settling rather than only before the delay.
+  if ! soft_keyboard_is_shown; then
+    break
+  fi
+
+  if (( settle_pass >= 3 )); then
+    write_capture_failure_diagnostics
+    echo "storybook-capture: aborting capture for story: $story_id because the soft keyboard kept reappearing during the settle delay" >&2
+    exit 1
+  fi
+
+  settle_pass=$((settle_pass + 1))
+done
 
 if [[ -n $ready_kind ]]; then
   assert_current_native_readiness 'immediately before screenshot' || exit 1

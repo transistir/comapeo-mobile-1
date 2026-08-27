@@ -16,7 +16,6 @@
 import * as React from 'react';
 import {useClientApi} from '@comapeo/core-react';
 import {lengthToDegrees} from '@turf/helpers';
-import {randomPosition} from '@turf/random';
 import {type BBox} from 'geojson';
 import type {Preset} from '@comapeo/schema';
 
@@ -92,16 +91,16 @@ export function useSeedObservations(count: number, options?: {lang?: string}) {
         latitude + distanceBufferDegrees,
       ];
 
+      const seedPresets = selectSeedPresets(presets, deficit, {
+        existingCount: existingIds.length,
+      });
+
       const tasks: Promise<string>[] = [];
       for (let i = 0; i < deficit; i++) {
-        const [lon, lat] = randomPosition({bbox});
-        if (lon == null || lat == null) {
-          throw new Error('randomPosition invalid');
-        }
+        const preset = seedPresets[i];
+        if (!preset) continue;
 
-        const randomPreset =
-          presets[Math.floor(Math.random() * presets.length)];
-        if (!randomPreset) continue;
+        const {lon, lat} = selectSeedPosition(bbox, existingIds.length + i);
 
         const metadata: Metadata = {
           manualLocation: false,
@@ -115,7 +114,7 @@ export function useSeedObservations(count: number, options?: {lang?: string}) {
         const value = {
           schemaName: 'observation' as const,
           attachments: [],
-          tags: {...randomPreset.tags, notes: 'Seeded by Storybook'},
+          tags: {...preset.tags, notes: 'Seeded by Storybook'},
           lat,
           lon,
           metadata,
@@ -134,20 +133,26 @@ export function useSeedObservations(count: number, options?: {lang?: string}) {
 }
 
 /**
+ * Order presets the same, deterministic way everywhere they need a stable
+ * order: by `name` (a code unit compare, not `localeCompare`, whose ordering
+ * depends on the ICU data available to the runtime), breaking ties on
+ * `docId`. `docId` is generated when a project's config is written, so it
+ * differs on every capture run; `name` comes from the config itself and
+ * survives project re-creation, which is what makes an ordering built on it
+ * reproducible across runs.
+ */
+function comparePresetsByName(a: Preset, b: Preset): number {
+  if (a.name !== b.name) return a.name < b.name ? -1 : 1;
+  if (a.docId !== b.docId) return a.docId < b.docId ? -1 : 1;
+  return 0;
+}
+
+/**
  * Pick the point preset a draft-backed flow story should render, from the
  * presets a project's config exposes.
  *
- * Deterministic *across* capture runs, not just within one. Every run seeds a
- * fresh project, so `docId` — which is generated when the config is written —
- * is a different value each time; ordering by it produced a different preset
- * on every run while looking stable in the code. `name` comes from the config
- * itself, so it survives project re-creation, and it makes the choice legible:
- * a reviewer can tell which preset a frame should show by reading the config
- * rather than by running a capture.
- *
- * Compared by code unit rather than by `localeCompare`, whose ordering depends
- * on the ICU data available to the runtime. `docId` breaks ties, which only
- * matters for a config that ships two point presets under one name.
+ * Deterministic *across* capture runs, not just within one — see
+ * `comparePresetsByName`.
  */
 export function selectPointPreset(
   presets: ReadonlyArray<Preset>,
@@ -161,11 +166,75 @@ export function selectPointPreset(
         preset.geometry.includes('point') &&
         (!requireFields || preset.fieldRefs.length > 0),
     )
-    .sort((a, b) => {
-      if (a.name !== b.name) return a.name < b.name ? -1 : 1;
-      if (a.docId !== b.docId) return a.docId < b.docId ? -1 : 1;
-      return 0;
-    })[0];
+    .sort(comparePresetsByName)[0];
+}
+
+/**
+ * Pick the presets `useSeedObservations` should apply to `count` newly
+ * seeded observations, by index into a name-sorted list (see
+ * `comparePresetsByName`) rather than `Math.random()`. `existingCount` offsets
+ * the index so a second seeding pass — topping up a project that already has
+ * some seeded observations — continues the rotation instead of restarting it.
+ *
+ * Wraps around with `%` when there are fewer eligible presets than
+ * observations to seed, so the result is always `count` presets long (never
+ * empty unless `presets` itself is empty), and still varies between
+ * observations whenever more than one preset is eligible.
+ */
+export function selectSeedPresets(
+  presets: ReadonlyArray<Preset>,
+  count: number,
+  options?: {existingCount?: number},
+): Preset[] {
+  const existingCount = options?.existingCount ?? 0;
+  const sorted = [...presets].sort(comparePresetsByName);
+  if (sorted.length === 0) return [];
+
+  const result: Preset[] = [];
+  for (let i = 0; i < count; i++) {
+    const selected = sorted[(existingCount + i) % sorted.length];
+    if (selected) result.push(selected);
+  }
+  return result;
+}
+
+/**
+ * Halton sequence value for `index` in prime `base`, in the open interval
+ * (0, 1). A low-discrepancy sequence: successive indices fill the interval
+ * evenly rather than clustering or repeating the way a naive hash of `index`
+ * would.
+ */
+function halton(index: number, base: number): number {
+  let result = 0;
+  let fraction = 1 / base;
+  let i = index;
+  while (i > 0) {
+    result += fraction * (i % base);
+    i = Math.floor(i / base);
+    fraction /= base;
+  }
+  return result;
+}
+
+/**
+ * Deterministic replacement for `randomPosition({bbox})`: the `index`-th
+ * point of a 2D Halton sequence (bases 2 and 3, the standard low-discrepancy
+ * pairing) mapped onto `bbox`. Successive indices land at well-separated
+ * points inside the box and repeat exactly on every call, unlike
+ * `Math.random()`-backed sampling.
+ */
+export function selectSeedPosition(
+  bbox: BBox,
+  index: number,
+): {lon: number; lat: number} {
+  const [minLon, minLat, maxLon, maxLat] = bbox;
+  // Halton sequences start at index 1; index 0 degenerates to (0, 0) in
+  // every base.
+  const i = index + 1;
+  return {
+    lon: minLon + halton(i, 2) * (maxLon - minLon),
+    lat: minLat + halton(i, 3) * (maxLat - minLat),
+  };
 }
 
 /**

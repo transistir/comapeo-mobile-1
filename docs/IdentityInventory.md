@@ -124,15 +124,19 @@ Colors live in four places:
    `ListItem.tsx:102`, `ListItemText.tsx:53,58`, `IntroToCoMapeo.tsx:141`,
    `ObservationFilterToggle.tsx:139`, `LanguageSettings.tsx:77,111`,
    `ObscurePasscode.tsx:69` — and **37 named-color-literal sites over 5
-   distinct values** (React Native accepts CSS color keywords in any color
-   prop, in both style-object form — `color: 'white'` — and JSX-attribute
-   form — `placeholderTextColor="silver"`): `white` ×16, `silver` ×10
-   (the placeholder color across the manual-GPS forms —
+   distinct opaque values** (React Native accepts CSS color keywords in any
+   color prop, in both style-object form — `color: 'white'` — and
+   JSX-attribute form — `placeholderTextColor="silver"`): `white` ×16,
+   `silver` ×10 (the placeholder color across the manual-GPS forms —
    `ManualGpsScreen/DdForm.tsx`, `DmsForm/DmsInputGroup.tsx`,
    `UtmForm.tsx`, `SaveTrack/TrackDescriptionField.tsx`), `black` ×9
    (e.g. `CameraView.tsx:182`), `lightgray` ×1, `red` ×1 (`AddPhoto.tsx:60`);
-   19 files carry at least one. A migration keyed on hex and `rgba()`
-   literals alone leaves these behind too.
+   19 files carry at least one. A further **26 `transparent` uses** sit in
+   color props (`backgroundColor`, `border*Color`,
+   `underlineColorAndroid="transparent"` alongside the ten `silver`
+   placeholders) — counted separately because `transparent` is
+   theme-agnostic: no rebrand touches it. A migration keyed on hex and
+   `rgba()` literals alone leaves these behind too.
 4. Colors baked into the SVG assets of `src/frontend/images/**`: **68 of
    the 77 non-logo SVGs** carry at least one literal color (hex or named),
    over **314 literal color sites** — 211 hex + **103 named `fill`/`stroke`

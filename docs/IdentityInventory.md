@@ -36,7 +36,7 @@ identity.
 |-------|----------|-----------------|
 | App icon | `assets/icon.png` (1024×1024 RGBA) | Solid black background; "CoMapeo" wordmark — "Co" in orange (≈ `#F5A623`), "Mapeo" in white, bold sans-serif |
 | Splash | `assets/splash.png` (1024×1024 RGBA) | Solid black background; cobalt-blue topographic blob (≈ `#1E4FA8`); same "CoMapeo" wordmark centered |
-| In-app logos | `src/frontend/images/CoMapeoLogo.svg`, `CoMapeoShield.svg`, `CoMapeoText.svg`, `TopoLogo.svg` | CoMapeo marks used in onboarding, about, and drawer surfaces |
+| In-app logos | `src/frontend/images/CoMapeoLogo.svg`, `CoMapeoShield.svg`, `CoMapeoText.svg`, `TopoLogo.svg` | CoMapeo marks used in onboarding (`IntroToCoMapeo` = TopoLogo + CoMapeoText, `DataPrivacy` = CoMapeoShield), `AuthScreen` (CoMapeoLogo), and `ComapeoSettings/DataAndPrivacy` (CoMapeoShield) |
 | User-visible "CoMapeo" copy | 34 non-test files under `src/frontend/` | Not only onboarding (`IntroToCoMapeo`, `DataPrivacy`, `MapOnYourOwnIntro`): the tracking notification in `hooks/useTracking.ts` ("CoMapeo is tracking your location"), `AuthScreen.tsx`, `CameraView.tsx`, `DrawerMenu.tsx`, the `ComapeoSettings/*` screens, `Observation/Buttons.tsx`, `PhotoPreviewModal/AttachedPhotoPreviewModal.tsx`, and more. Any rebrand pass must sweep all 34, not just onboarding. |
 
 ## 3. Typography
@@ -62,9 +62,11 @@ Colors live in three places:
    `MANGO`, greys, status colors, …), imported by ~157 files. This is the
    existing token entry point — but it carries the **upstream CoMapeo
    palette**, not a COIAB one.
-2. `src/frontend/constants.ts` — the five project-card colors, chosen for the
-   COIAB use case during the rebrand (note `LIGHT_ORANGE`/`LIGHT_GREEN` in
-   `styles.ts` duplicate two of these hexes):
+2. `src/frontend/constants.ts` — the five project-card colors (verbatim
+   upstream: identical hexes exist in `digidem/comapeo-mobile`'
+   `constants.ts`; they arrived with the fork, they were not chosen for
+   COIAB). Note `LIGHT_ORANGE`/`LIGHT_GREEN` in `styles.ts` duplicate two of
+   these hexes:
 
    | Name | Hex |
    |------|-----|
@@ -75,9 +77,9 @@ Colors live in three places:
    | | `#E5E5EB` (grey) |
 
 3. Inline hex literals scattered across `src/frontend/**` (top offenders by
-   count: `#FFF5EB` ×6, `#FFFFFF` ×4, `#FF0000` ×4, `#CCE0FF` ×4, `#CCCCD6`
-   ×4, `#59A553` ×3, `#3C69F6` ×2, `#0066FF` ×2, plus ~30 more single-use
-   hexes) — these bypass `styles.ts` entirely.
+   case-insensitive count: `#FFF5EB` ×7, `#FFFFFF` ×5, `#FF0000` ×4,
+   `#CCE0FF` ×4, `#CCCCD6` ×4, `#59A553` ×3, `#3C69F6` ×2, `#0066FF` ×2,
+   plus ~30 more single-use hexes) — these bypass `styles.ts` entirely.
 
 `App.tsx` wires providers only — there is no `ThemeProvider`. The gap is not
 "no token file" (one exists) but "token file is partial and pre-rebrand": no
@@ -95,11 +97,14 @@ CoMapeo's.
 
 ## 6. Non-authoritative color starting point
 
-For #19 to have *something* to react to, a starting palette can be taken from
-the five project colors already in `constants.ts` (they were chosen for this
-app, unlike the CoMapeo palette in `lib/styles.ts`). This is explicitly a
-placeholder until the Figma file is linked — flag any PR that ships these as
-final.
+**No in-repo palette is COIAB's.** Both `lib/styles.ts` and the
+`constants.ts` project colors are upstream CoMapeo values inherited by the
+fork (`git log -S '#FFF5EB'` traces them to upstream commits). Until the
+Figma file is linked, #19 has no in-repo source to draw a COIAB palette
+from; if a provisional palette is needed before then, keep the five project
+colors for project-picker cards only (they are already in that UI) and leave
+every other surface untouched — and flag any PR that ships provisional
+values as final.
 
 ## 7. What this document is not
 

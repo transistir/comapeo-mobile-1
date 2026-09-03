@@ -104,10 +104,11 @@ Colors live in four places:
    `#000000` ×26, `#333333` ×16, `#E86826` ×15, `#FFD748`/`#757575` ×11,
    `#0066FF` ×7. Examples: `OrangeExchange.svg` (`#E86826`),
    `AddProject.svg`/`DownArrow.svg`/`SendingIcon.svg`/`CheckMark.svg`
-   (`#0066FF`). The SVG palette largely diverges from the TS palette: only
-   `#E86826` exists in `styles.ts` (`DARK_ORANGE`); the next most common —
-   `#FFD748`, `#FFBC47`, `#C86F34`, `#C19B66`, `#804B24`, `#FFCB4B` —
-   appear in no `.ts`/`.tsx` file. These colors live
+   (`#0066FF`). Overlap with the token module: 12 of the 54 also exist in
+   `styles.ts` (`COMAPEO_BLUE` `#0066FF`, `DARK_ORANGE` `#E86826`, and the
+   shared greys/black/white/red); the most common **SVG-only** colors —
+   `#FFD748` ×11, `#FFBC47`/`#C86F34` ×10, `#C19B66`/`#804B24` ×8,
+   `#FFCB4B` ×6 — appear in no `.ts`/`.tsx` at all. These colors live
    in the artwork itself: no token module can restyle them, they change only
    when the asset files are replaced. #19 as scoped covers `styles.ts` +
    inline hexes, not SVG interiors; unless a follow-up issue takes the icon

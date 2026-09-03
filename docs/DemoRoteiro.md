@@ -21,7 +21,7 @@ registrado como default assumido.)
   `docs/EndToEndTests/E2EWithAppium.md:62`).
 - **Nomear o dispositivo QA antes de esperar o onboarding:** o APK candidato
   usa o perfil `release-candidate` (perfil default do comando canônico,
-  decisão registrada no handoff da #13), que seta `APP_VARIANT=releaseCandidate`
+  default assumido registrado no handoff da #13), que seta `APP_VARIANT=releaseCandidate`
   (`eas.json`; nem todo perfil não-`production` seta essa variante: `test` e
   `storybook` compartilham `releaseCandidate`, `pre-release` seta `preRelease`
   — variante que também passa o portão QA — e `development` seta `development`,
@@ -43,8 +43,9 @@ registrado como default assumido.)
   passo 10: a aceitação do convite só segue o caminho seguro de onboarding
   quando `JoinProjectIntro` está no estado de navegação
   (`src/frontend/screens/Invites/InviteReceived.tsx:101-124` — com o
-  convidado parado em outra tela, o app reseta a navegação para a rota
-  `Home` do app já instalado); um dispositivo parado só até a nomeação
+  convidado parado em outra tela, o app reseta a navegação sobre a rota
+  `Home` do app já instalado — a folha de aceite concluído aparece sobre a
+  Home, e o convite já foi aceito antes da checagem de navegação); um dispositivo parado só até a nomeação
   concluída ainda está na tela de sucesso, não em `JoinProjectIntro`.
   Além disso, um dispositivo zerado **aparece** na lista de convites como
   entrada sem nome legível (`SelectInviteDevice.tsx` renderiza

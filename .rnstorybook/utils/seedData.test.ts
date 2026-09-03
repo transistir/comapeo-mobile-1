@@ -1,4 +1,5 @@
 import {
+  matchSeedIndex,
   selectPointPreset,
   selectSeedPosition,
   selectSeedPresets,
@@ -161,5 +162,33 @@ describe('selectSeedPosition', () => {
     );
     const unique = new Set(positions.map(p => `${p.lon},${p.lat}`));
     expect(unique.size).toBe(positions.length);
+  });
+});
+
+describe('matchSeedIndex', () => {
+  const bbox: BBox = [-79, -1, -78, 0];
+
+  it('recovers the index of every generated seed position', () => {
+    for (let i = 0; i < 10; i++) {
+      const {lon, lat} = selectSeedPosition(bbox, i);
+      expect(matchSeedIndex({lat, lon}, bbox, 12)).toBe(i);
+    }
+  });
+
+  it('sorts off-sequence positions and missing coordinates after seeded ones', () => {
+    const seeded = selectSeedPosition(bbox, 3);
+    expect(
+      matchSeedIndex({lat: seeded.lat + 0.5, lon: seeded.lon}, bbox, 12),
+    ).toBe(Number.MAX_SAFE_INTEGER);
+    expect(matchSeedIndex({lat: null, lon: null}, bbox, 12)).toBe(
+      Number.MAX_SAFE_INTEGER,
+    );
+  });
+
+  it('never matches a position beyond maxIndex', () => {
+    const beyond = selectSeedPosition(bbox, 7);
+    expect(matchSeedIndex({lat: beyond.lat, lon: beyond.lon}, bbox, 5)).toBe(
+      Number.MAX_SAFE_INTEGER,
+    );
   });
 });

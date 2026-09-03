@@ -50,8 +50,9 @@ export function useSeedProject(name: string) {
 /**
  * Ensure at least `count` observations exist in the project passed to
  * `ensure(projectId)` and return the docIds of the first `count` of them,
- * in deterministic seed order for a fresh project (existing ones first,
- * then any newly created ones — see the note at the return).
+ * in seed order — existing observations ordered by their recovered seed
+ * index (see `matchSeedIndex`), then any newly created ones (see the note
+ * at the return).
  *
  * `projectId` is a parameter of `ensure()` rather than of the hook itself so
  * callers can seed a project id that was only just resolved (e.g. by
@@ -72,14 +73,6 @@ export function useSeedObservations(count: number, options?: {lang?: string}) {
         projectApi.preset.getMany({lang}),
       ]);
 
-      const existingIds = existingObservations
-        .map(observation => observation.docId)
-        .sort();
-      const deficit = count - existingIds.length;
-      if (deficit <= 0 || presets.length === 0) {
-        return existingIds.slice(0, count);
-      }
-
       const distanceBufferDegrees = lengthToDegrees(
         DISTANCE_BUFFER_KM,
         'kilometers',
@@ -92,11 +85,36 @@ export function useSeedObservations(count: number, options?: {lang?: string}) {
         latitude + distanceBufferDegrees,
       ];
 
+      // Order the observations that already exist by their seed index —
+      // recovered from coordinates, the one property of a seeded observation
+      // that is deterministic across project re-creations. Stories share one
+      // project (FLOW_STATES.onboardedWithData), so every story after the
+      // first takes this path, and any docId- or createdAt-based order here
+      // would make `observationIds[0]` a different seeded observation on
+      // every capture run. Off-sequence observations (created through the UI
+      // by a flow story, say) sort last so they never displace seeded ones.
+      const maxSeedIndex = existingObservations.length + count;
+      const orderedExisting = [...existingObservations].sort((a, b) => {
+        const rankA = matchSeedIndex(a, bbox, maxSeedIndex);
+        const rankB = matchSeedIndex(b, bbox, maxSeedIndex);
+        if (rankA !== rankB) return rankA - rankB;
+        return a.docId < b.docId ? -1 : 1;
+      });
+      const existingIds = orderedExisting.map(observation => observation.docId);
+      const deficit = count - existingIds.length;
+      if (deficit <= 0 || presets.length === 0) {
+        return existingIds.slice(0, count);
+      }
+
       const seedPresets = selectSeedPresets(presets, deficit, {
         existingCount: existingIds.length,
       });
 
-      const tasks: Promise<string>[] = [];
+      // Create sequentially, not with Promise.all: the app lists observations
+      // by createdAt descending (ObservationsList/index.tsx), and only
+      // sequential creation guarantees createdAt order matches seed order —
+      // otherwise the list rows reorder between capture runs.
+      const newIds: string[] = [];
       for (let i = 0; i < deficit; i++) {
         const preset = seedPresets[i];
         if (!preset) continue;
@@ -121,16 +139,10 @@ export function useSeedObservations(count: number, options?: {lang?: string}) {
           metadata,
         };
 
-        tasks.push(projectApi.observation.create(value).then(doc => doc.docId));
+        const doc = await projectApi.observation.create(value);
+        newIds.push(doc.docId);
       }
 
-      const newIds = await Promise.all(tasks);
-      // Seed order, not docId order: docIds are generated per project
-      // creation, so sorting by them would make `observationIds[0]` a
-      // different seeded observation (preset, position) on every capture
-      // run. `Promise.all` preserves task order, so a fresh project's ids
-      // come back as seed indices 0..n-1; the top-up path keeps
-      // session-stable docId order for what already existed.
       return [...existingIds, ...newIds].slice(0, count);
     },
     [clientApi, count, lang],
@@ -242,6 +254,35 @@ export function selectSeedPosition(
     lon: minLon + halton(i, 2) * (maxLon - minLon),
     lat: minLat + halton(i, 3) * (maxLat - minLat),
   };
+}
+
+/**
+ * Recover the seed index of an observation by matching its coordinates
+ * against the points `selectSeedPosition` generates. Coordinates are the
+ * only property of a seeded observation that is identical across project
+ * re-creations, so an ordering built on this match survives docId and
+ * createdAt randomness. Returns `Number.MAX_SAFE_INTEGER` for observations
+ * whose position is not on the seed sequence (or has none), so they sort
+ * after every seeded one.
+ */
+export function matchSeedIndex(
+  observation: {lat: number | null; lon: number | null},
+  bbox: BBox,
+  maxIndex: number,
+): number {
+  if (observation.lat == null || observation.lon == null) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+  for (let i = 0; i <= maxIndex; i++) {
+    const point = selectSeedPosition(bbox, i);
+    if (
+      Math.abs(point.lat - observation.lat) < 1e-9 &&
+      Math.abs(point.lon - observation.lon) < 1e-9
+    ) {
+      return i;
+    }
+  }
+  return Number.MAX_SAFE_INTEGER;
 }
 
 /**

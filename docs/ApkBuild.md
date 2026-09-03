@@ -9,14 +9,21 @@ is required. (transistir/coiab-app#13)
 ## Build an APK (one command)
 
 ```sh
-gh workflow run build-apk.yml --repo transistir/comapeo-mobile-1 --ref develop
+gh workflow run build-apk.yml --repo transistir/coiab-app --ref develop
 ```
 
-The command dispatches the workflow on `develop` of
-`transistir/comapeo-mobile-1` (first stop for code; it reaches
-`transistir/coiab-app` via the usual sync PR). Pass `--ref <branch>` to build
-a specific branch, or `--repo transistir/coiab-app` once the workflow has been
-synced there.
+`transistir/coiab-app` is the working repo (per AGENTS.md) — day-to-day
+builds, including candidate APKs for QA, are dispatched there. Two caveats:
+
+- `workflow_dispatch` only sees workflows on the repo's **default branch**,
+  so this command works once this workflow has reached `coiab-app`'s
+  `develop` (it travels there via the usual sync PR from
+  `transistir/comapeo-mobile-1`, where it lands first).
+- Until then, dispatch the same workflow on the fork:
+  `--repo transistir/comapeo-mobile-1` — for explicit fork-side work only,
+  since `coiab-app` may carry app changes not yet mirrored back.
+
+Pass `--ref <branch>` to build a specific branch.
 
 ## Get the APK
 
@@ -26,7 +33,7 @@ dispatching, filter the run list to the branch you dispatched on, and take
 the newest run created at or after that timestamp.
 
 ```sh
-REPO=transistir/comapeo-mobile-1
+REPO=transistir/coiab-app   # or transistir/comapeo-mobile-1 while unsynced
 REF=develop   # the --ref you will dispatch on
 SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 gh workflow run build-apk.yml --repo "$REPO" --ref "$REF"
@@ -65,13 +72,14 @@ The workflow uploads the APK as the `coiab-apk` artifact (30-day retention).
 Select with the workflow's `profile` input:
 
 ```sh
-gh workflow run build-apk.yml --repo transistir/comapeo-mobile-1 --ref develop -f profile=pre-release
+gh workflow run build-apk.yml --repo transistir/coiab-app --ref develop -f profile=pre-release
 ```
 
 ## Requirements on the repository
 
 The workflow consumes repository configuration (already present on
-`transistir/comapeo-mobile-1`; mirror it when enabling elsewhere):
+`transistir/comapeo-mobile-1`; mirror the same settings on
+`transistir/coiab-app` when the workflow syncs there):
 
 - Secret `EXPO_TOKEN` — resolves the EAS project and its `preview` environment.
 - Secret `MAPBOX_ACCESS_TOKEN` — baked into the native build for the online

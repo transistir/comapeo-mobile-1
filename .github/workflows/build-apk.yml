@@ -15,8 +15,10 @@
 #   (no EAS cloud build, no local toolchain required).
 # - Uploads the APK as a workflow artifact.
 #
-# Canonical invocation (see docs/ApkBuild.md):
+# Canonical invocation (see docs/ApkBuild.md) — coiab-app is the working
+# repo; until this workflow syncs there, dispatch it on the fork:
 #
+#   gh workflow run build-apk.yml --repo transistir/coiab-app --ref develop
 #   gh workflow run build-apk.yml --repo transistir/comapeo-mobile-1 --ref develop
 name: Build APK
 

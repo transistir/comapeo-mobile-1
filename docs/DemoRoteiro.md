@@ -23,8 +23,12 @@ registrado como default assumido.)
   Android, o app pede câmera e localização (fina + aproximada) logo no
   arranque, antes de dispensar a splash (`src/frontend/App.tsx:230-253` —
   pedido adiantado; cada funcionalidade re-pede a sua quando chega ao uso).
-  Conceder **ambas** ao abrir — negar câmera ou localização aqui faz o passo
-  7 (foto + GPS) falhar no seu critério de sucesso.
+  Conceder **ambas** ao abrir — negar câmera ou localização aqui **pode**
+  fazer o passo 7 (foto + GPS) falhar: a câmera e o rastreio re-pedem a
+  permissão na hora do uso (`CameraView.tsx:53`,
+  `MapScreen/TrackBottomSheet/index.tsx:38`), mas um "Não perguntar de novo"
+  permanente só se desfaz nas configurações do sistema — desvio no meio da
+  demo que, na prática, falha o passo.
 - **Nomear o dispositivo QA antes de esperar o onboarding:** o APK candidato
   usa o perfil `release-candidate` (perfil default do comando canônico,
   default assumido registrado no handoff da #13), que seta `APP_VARIANT=releaseCandidate`

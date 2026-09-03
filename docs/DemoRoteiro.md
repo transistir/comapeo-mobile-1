@@ -2,9 +2,11 @@
 
 Roteiro exato da jornada mínima executada na demonstração ao cliente
 (17/09/2026), com o critério de degradação: **o que pode falhar sem cancelar
-a demo**. Escrito cedo para disciplinar o escopo — os dry-runs #41 e #42
-executam exatamente estes passos; "pronto para demonstrar" = passos 1–10
-verdes no dispositivo de demo.
+a demo**. Escrito cedo para disciplinar o escopo — o dry-run final (#42)
+executa exatamente estes passos; o intermediário (#41) cobre os passos 1–9
+(escopo declarado na #41: "jornada até navegação/mapeamento, sem Remote
+Archive" — o convite, passo 10, só entra no #42). "Pronto para demonstrar" =
+passos 1–10 verdes no dispositivo de demo.
 
 (transistir/coiab-app#40. Documento em português — artefato voltado à equipe
 que opera a demo; desvio consciente da convenção EN dos docs do repo,
@@ -17,6 +19,14 @@ registrado como default assumido.)
   instalação já onboarded preserva estado — o app abre direto na Home e o
   passo 1 falha (aviso equivalente em
   `docs/EndToEndTests/E2EWithAppium.md:62`).
+- **Nomear o dispositivo QA antes de esperar o onboarding:** o APK candidato
+  usa o perfil `release-candidate`, que seta `APP_VARIANT=releaseCandidate`
+  (`eas.json`) — nessa variante o app abre PRIMEIRO na tela de nomeação de
+  dispositivo QA (`src/frontend/AppNavigator.tsx`: `isQABuild &&
+  !qaDeviceName` renderiza `SetQADeviceNameScreen`) e só depois segue ao
+  onboarding. Sem nomear o dispositivo QA a verificação do passo 1 nunca é
+  alcançada; e limpar os dados do app (pré-condição acima) também apaga o
+  nome QA já salvo, então a nomeação acontece em toda execução limpa.
 - APK candidato (build pelo comando canônico da #13) instalado no dispositivo
   de demonstração.
 - **Segundo dispositivo pronto antes do passo 10** (é bloqueador — "disponível"
@@ -39,9 +49,9 @@ demo continua.
 |---|-------|------------------------|
 | 1 | Instalar o APK candidato no dispositivo | App abre na tela inicial do onboarding, sem crash |
 | 2 | Onboarding: nomear o dispositivo | Nome aceito; fluxo avança |
-| 3 | Informar etnia (opcional) | Campo aceita texto OU é pulado sem bloqueio ('não informar' = vazio, decisão #21) |
-| 4 | Escolher "Criar organização" e nomeá-la | Tela de criação conclui sem erro (decisão #26: entrada por convite não é exercitada aqui — criamos a org) |
-| 5 | Os dois projetos materializam automaticamente | "Monitoramento" e "Alertas" existem com as categorias do template (#30), sem ação extra (#31) |
+| 3 | Informar etnia (opcional) | Campo aceita texto OU é pulado sem bloqueio ('não informar' = vazio — representação proposta na #21, aprovação humana pendente) |
+| 4 | Escolher "Criar organização" e nomeá-la | Tela de criação conclui sem erro (#23 entrega a escolha criar/aguardar; #26 implementa a criação. Org criada ao vivo = default assumido registrado no handoff da #40; a entrada por convite não é exercitada aqui) |
+| 5 | Os dois projetos materializam automaticamente | "Monitoramento" e "Alertas" existem com as categorias do template proposto na #30 (aprovação humana pendente), sem ação extra (#31) |
 | 6 | Bottom navigation: alternar Monitoramento ↔ Alertas | Troca sem crash, sem perda de dado persistido (#33/#34) |
 | 7 | Criar observação em Monitoramento | Categoria (ex. "Fiscalização rotineira") + foto + GPS salvos e visíveis |
 | 8 | Criar observação em Alertas | Categoria (ex. "Incêndio / fumaça") salva e visível |
@@ -63,7 +73,7 @@ demo continua.
 ## Notas de execução
 
 - Os passos derivam da cadeia dos épicos: onboarding (#3/#22), organização
-  (#4/#26), dois projetos (#5/#30/#31), navegação (#6/#33), observações e
+  (#4/#23/#26), dois projetos (#5/#30/#31), navegação (#6/#33), observações e
   isolamento, convite (#27), Remote Archive (#8/#36–#39), jornada (#10).
   **O corpo do épico citado como fonte dos "12 passos" não foi localizado na
   forma numerada** (o épico da jornada hoje é #10, sem lista numerada);
@@ -76,7 +86,9 @@ demo continua.
 
 ## Pronto para demonstrar (definição operacional)
 
-1. Dry-run intermediário (#41): passos 1–10 verdes em emulador até ~09–10/09.
+1. Dry-run intermediário (#41): passos 1–9 verdes em emulador até ~09–10/09
+   (o convite, passo 10, está fora do escopo declarado da #41 e é provado na
+   #42).
 2. Jornada completa (#42): passos 1–10 verdes no dispositivo real de demo.
 3. APK candidato (#43) gerado pelo comando canônico (#13).
 4. Regressões bloqueadoras (#44) zeradas.

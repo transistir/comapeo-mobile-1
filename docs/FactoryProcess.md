@@ -14,12 +14,12 @@ transistir/comapeo-mobile-1#20 and transistir/comapeo-mobile-1#51.)
 | # | Stage | Who | Artifact | Done when |
 |---|-------|-----|----------|-----------|
 | 1 | **Issue** — create/refine on the board (transistir/coiab-app, project 2) | Hermes (PM agent) + humans | Issue with objetivo, perguntas em aberto, evidência esperada | Refinement labels triage it: `product-decision`, `technical-discovery`, `ready-for-refinement` |
-| 2 | **SPEC** — turn the refined issue into a testable spec | agent | `docs/specs/SPEC-<issue>-<slug>.md`, merged via docs PR | SPEC PR merged **and** issue relabeled `spec-approved` (was `spec-pending`) |
+| 2 | **SPEC** — turn the refined issue into a testable spec | agent | `docs/specs/SPEC-<issue>-<slug>.md`, merged via docs PR | SPEC PR merged **by a human** — SPEC PRs follow the same never-merge rule as delivery PRs; the agent applies `spec-approved` only after observing that merge (issue was `spec-pending` meanwhile) |
 | 3 | **Implementation** — one branch per issue (`type/slug`), conventional commits, issue-linked | agent | PR to `transistir/comapeo-mobile-1` `develop` | code complete, self-reviewed |
 | 4 | **Review** — two reviewer families over the same diff | Codex (`@codex review` PR comment) + a second family (Opus subagent) | review comments / threads | both families report clean, **zero unresolved threads** |
 | 5 | **CI** — all checks on the PR head | GitHub Actions | green runs | all checks green; UI changes additionally need the Storybook Flow Capture workflow green |
 | 6 | **Evidence handoff** — post the evidence comment on the coiab-app issue in the template below | agent | one evidence comment per issue | comment posted; PR body links to it |
-| 7 | **Human QA** — human reads evidence, merges or rejects | human | merge / rejection notes | issue labeled `ready-for-human-review`; **the factory never merges** |
+| 7 | **Human QA** — human reads evidence, merges or rejects | human | merge / rejection notes | entry: issue carries `ready-for-human-review` (applied at the end of stage 6). Exit: the human merges the PR or rejects with notes. **The factory never merges — delivery PRs and SPEC PRs alike.** |
 
 Stage rules that are easy to get wrong:
 
@@ -41,7 +41,7 @@ Stage rules that are easy to get wrong:
 | Per-item source of truth | the coiab-app issue (labels = state) | permanent |
 | SPEC | `docs/specs/SPEC-<issue>-<slug>.md` in this repo, merged via PR | permanent (in git) |
 | Code delivery | PR on `transistir/comapeo-mobile-1` | permanent |
-| **Evidence** | **one evidence comment on the coiab-app issue**, updated in place as the delivery progresses (not one comment per push) | permanent |
+| **Evidence** | **one evidence comment on the coiab-app issue**, updated in place as the delivery progresses (not one comment per push). It is the comment whose body starts with the `## Handoff` heading — a later agent on the same issue edits that comment, never re-posts | permanent |
 | Screenshots / short logs | pasted into the evidence comment; logs inside `<details>` blocks | permanent |
 | CI runs / build artifacts | linked runs; APKs etc. as GitHub Actions artifacts | 30 days — fine for the MVP cycle |
 | Per-delivery learnings | "Notes for next agent" section of the evidence comment | permanent |
@@ -79,7 +79,9 @@ Portuguese; keep field names in English for grep-ability):
 ## Handoff — <issue title>
 
 **PR:** <link> (head <sha>)
-**SPEC:** <link, or "n/a — no SPEC for this item">
+**SPEC:** <link, or "n/a"> — n/a only when the issue itself is the deliverable
+(a decision record or doc with no implementation to follow); if an
+implementation follows, a SPEC is required
 
 ### What changed
 <one short paragraph>
@@ -119,6 +121,11 @@ review families run, evidence comment posted on coiab-app#46 in exactly the
 template above. See the evidence comment on coiab-app#46 for the filled-in
 instance.
 
+Grandfathering note: #46 predates the stage-2 gate defined here — its SPEC
+was an untracked file until this PR committed it, and the issue never
+carried `spec-pending`/`spec-approved`. Do not read that as the labels being
+optional; every implementation issue from now on goes through stage 2.
+
 ## 6. Defaults assumed while writing this document
 
 - This document is in English (repo convention); board comments continue in
@@ -127,3 +134,9 @@ instance.
   lived untracked at the repo root).
 - Evidence = one updatable comment per issue; build binaries as Actions
   artifacts (30-day retention is acceptable for the MVP cycle).
+
+## Appendix — cross-delivery learnings
+
+Durable learnings that span deliveries, appended one entry per finding via
+PR. (Empty until the first entry; a "Notes for next agent" section that
+repeats across deliveries graduates here.)

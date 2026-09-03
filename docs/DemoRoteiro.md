@@ -20,7 +20,9 @@ registrado como default assumido.)
   passo 1 falha (aviso equivalente em
   `docs/EndToEndTests/E2EWithAppium.md:62`).
 - **Nomear o dispositivo QA antes de esperar o onboarding:** o APK candidato
-  usa o perfil `release-candidate`, que seta `APP_VARIANT=releaseCandidate`
+  usa o perfil `release-candidate` (perfil default do comando canônico,
+  decisão registrada no handoff da #13; todo perfil não-`production` do
+  `eas.json` seta a mesma variante), que seta `APP_VARIANT=releaseCandidate`
   (`eas.json`) — nessa variante o app abre PRIMEIRO na tela de nomeação de
   dispositivo QA (`src/frontend/AppNavigator.tsx`: `isQABuild &&
   !qaDeviceName` renderiza `SetQADeviceNameScreen`) e só depois segue ao
@@ -34,8 +36,11 @@ registrado como default assumido.)
   mesma versão do app nos dois dispositivos, ver
   `src/frontend/screens/YourTeam/SelectInviteDevice.tsx`), os dois na mesma
   rede Wi-Fi, e o segundo dispositivo com o onboarding ao menos até a
-  nomeação concluída — um dispositivo zerado sem nome não aparece na lista
-  de convites.
+  nomeação concluída — um dispositivo zerado **aparece** na lista de
+  convites como entrada sem nome legível (`SelectInviteDevice.tsx` renderiza
+  `name || ''`; a lista filtra apenas membros existentes, não dispositivos
+  sem nome), mas o convite não conclui sem o onboarding completo. Nomear o
+  segundo dispositivo antes do passo 10 evita convidar a entrada errada.
 - Roteiro decorado/preso: a demo não improvisa passos fora desta lista.
 
 ## A jornada — 12 passos
@@ -47,7 +52,7 @@ demo continua.
 
 | # | Passo | Verificação de sucesso |
 |---|-------|------------------------|
-| 1 | Instalar o APK candidato no dispositivo | App abre na tela inicial do onboarding, sem crash |
+| 1 | Instalar o APK candidato no dispositivo | Após a nomeação QA (pré-condição acima), app abre na tela inicial do onboarding, sem crash |
 | 2 | Onboarding: nomear o dispositivo | Nome aceito; fluxo avança |
 | 3 | Informar etnia (opcional) | Campo aceita texto OU é pulado sem bloqueio ('não informar' = vazio — representação proposta na #21, aprovação humana pendente) |
 | 4 | Escolher "Criar organização" e nomeá-la | Tela de criação conclui sem erro (#23 entrega a escolha criar/aguardar; #26 implementa a criação. Org criada ao vivo = default assumido registrado no handoff da #40; a entrada por convite não é exercitada aqui) |

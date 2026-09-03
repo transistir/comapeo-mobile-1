@@ -955,7 +955,7 @@ Com uma Organização contendo dois project IDs:
 - [ ] Sair ou ser removido de um projeto da Organização não materializa projeto standalone.
 - [ ] Remote Archive org-level pode ser demonstrado como fan-out para os dois projetos.
 - [ ] Nenhuma mudança em sync, storage ou membership protocol foi necessária.
-- [ ] Para `FRONTEND_ONLY_VIABLE`, nenhuma alteração em `src/backend` nem fork de dependência é necessária.
+- [ ] Para `FRONTEND_ONLY_VIABLE`, nenhuma alteração fora de `src/frontend`, `tests/` e `docs/` (nem fork de dependência) é necessária.
 - [ ] O spike termina com evidência reproduzível e um veredito explícito.
 
 ---
@@ -1019,10 +1019,14 @@ Comandos mínimos de verificação, adaptados se necessário:
 ```bash
 npm run lint
 npm run test:jest -- <testes relevantes>
-git diff -- src/backend
+git diff --name-only develop...HEAD -- . ':!src/frontend' ':!tests' ':!docs'
 ```
 
-Para `FRONTEND_ONLY_VIABLE`, o último comando deve permanecer vazio.
+Para `FRONTEND_ONLY_VIABLE`, o último comando deve permanecer vazio — nenhuma
+alteração fora das superfícies frontend/testes/docs. (`src/backend` não existe
+mais na árvore pós-migração; um diff sobre ele seria sempre vazio e não
+provaria nada. O comando acima cobre as superfícies reais, incluindo mudanças
+em integração nativa, scripts e dependências.)
 
 ---
 

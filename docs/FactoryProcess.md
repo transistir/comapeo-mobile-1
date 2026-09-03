@@ -25,14 +25,22 @@ Stage rules that are easy to get wrong:
 
 - **PRs target `transistir/comapeo-mobile-1` `develop`.** coiab-app `develop`
   receives them through sync PRs; `digidem/*` is never written to
-  (fetch/diff/read only).
+  (fetch/diff/read only). This is a deliberate sprint decision, not an
+  oversight of the AGENTS.md remote table ("origin = the working repo"):
+  code changes sit next to the upstream-sync base they will eventually ride
+  (every implementation PR since #56 has targeted it), while the board side
+  of the factory — issues, evidence comments, labels, workflow dispatches —
+  stays on coiab-app. If the human owner wants code PRs on coiab-app instead,
+  change this bullet and the stage-3 row together.
 - Review severity: **BUG/RISK fixed immediately; every NIT verified against
   the code before applying** — reviewer claims are hypotheses.
 - Codex mechanics: `@codex review` comment on the PR; 👀 reaction = working,
   a "no major issues" reply = clean; **no reaction = silent no-op —
   re-prompt**. After every push, re-request both families.
-- Blocked >2h on anything: post a precise blocker comment on the issue, park
-  it, move on.
+- Blocked >2h on anything: post a precise blocker comment on the issue, apply
+  the `blocked` label (labels are the board's source of truth — a parked item
+  must not still read as active), park it, move on. On resume: remove
+  `blocked` and restore the state label the item carried before parking.
 
 ## 2. Where artifacts live
 
@@ -68,6 +76,12 @@ never remove those). Three labels complete the flow:
 
 State labels are replaced as the flow advances (`spec-pending` →
 `spec-approved`; final state `ready-for-human-review`).
+
+After a stage-7 rejection, the human removes `ready-for-human-review` and
+re-applies `spec-approved` (the delivery is implemented but not accepted);
+the agent resumes at stage 4 to address the rejection notes. A final
+rejection — no rework wanted — closes the issue with the rejection notes as
+the record; no further label transition.
 
 ## 4. Handoff template
 

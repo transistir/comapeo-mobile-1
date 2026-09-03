@@ -49,8 +49,9 @@ export function useSeedProject(name: string) {
 
 /**
  * Ensure at least `count` observations exist in the project passed to
- * `ensure(projectId)` and return the docIds of the first `count` of them
- * (existing ones first, then any newly created ones).
+ * `ensure(projectId)` and return the docIds of the first `count` of them,
+ * in deterministic seed order for a fresh project (existing ones first,
+ * then any newly created ones — see the note at the return).
  *
  * `projectId` is a parameter of `ensure()` rather than of the hook itself so
  * callers can seed a project id that was only just resolved (e.g. by
@@ -124,7 +125,13 @@ export function useSeedObservations(count: number, options?: {lang?: string}) {
       }
 
       const newIds = await Promise.all(tasks);
-      return [...existingIds, ...newIds].sort().slice(0, count);
+      // Seed order, not docId order: docIds are generated per project
+      // creation, so sorting by them would make `observationIds[0]` a
+      // different seeded observation (preset, position) on every capture
+      // run. `Promise.all` preserves task order, so a fresh project's ids
+      // come back as seed indices 0..n-1; the top-up path keeps
+      // session-stable docId order for what already existed.
+      return [...existingIds, ...newIds].slice(0, count);
     },
     [clientApi, count, lang],
   );

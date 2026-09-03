@@ -23,12 +23,22 @@ registrado como default assumido.)
   Android, o app pede câmera e localização (fina + aproximada) logo no
   arranque, antes de dispensar a splash (`src/frontend/App.tsx:230-253` —
   pedido adiantado; cada funcionalidade re-pede a sua quando chega ao uso).
-  Conceder **ambas** ao abrir — negar câmera ou localização aqui **pode**
-  fazer o passo 7 (foto + GPS) falhar: a câmera e o rastreio re-pedem a
-  permissão na hora do uso (`CameraView.tsx:53`,
-  `MapScreen/TrackBottomSheet/index.tsx:38`), mas um "Não perguntar de novo"
-  permanente só se desfaz nas configurações do sistema — desvio no meio da
-  demo que, na prática, falha o passo.
+  Conceder **ambas** ao abrir — negar alguma aqui **pode** fazer o passo 7
+  (foto + GPS) falhar, e as duas se recuperam de formas diferentes: a câmera
+  re-pede a permissão na hora do uso (`CameraView.tsx:53`); a localização
+  não — a observação apenas lê o estado da permissão e, sem ela, oferece
+  salvar sem coordenadas ou digitá-las à mão
+  (`ObservationCreateSaveButton.tsx:244-250`), e o único re-pedido sai da
+  folha de rastreio do mapa (`MapScreen/TrackBottomSheet/index.tsx:38`,
+  aberta ao tocar em iniciar rastreio). Em ambos os casos, um "Não perguntar
+  de novo" permanente só se desfaz nas configurações do sistema — desvio no
+  meio da demo que, na prática, falha o passo.
+- **Deixar os Serviços de Localização do aparelho ligados (GPS do sistema):**
+  o app só inicia o rastreador de posição quando a permissão está concedida
+  **e** os serviços de localização do sistema estão ativos
+  (`src/frontend/contexts/LocationContext.tsx:139-155`); com eles desligados
+  a observação sai sem GPS (o app oferece salvar sem coordenadas ou digitá-las
+  à mão) e o rastreio não parte — verificar o toggle antes de começar.
 - **Nomear o dispositivo QA antes de esperar o onboarding:** o APK candidato
   usa o perfil `release-candidate` (perfil default do comando canônico,
   default assumido registrado no handoff da #13), que seta `APP_VARIANT=releaseCandidate`

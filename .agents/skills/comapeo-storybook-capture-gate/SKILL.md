@@ -64,6 +64,10 @@ REPO=transistir/comapeo-mobile-1
 #   only after coiab-app's EXPO_TOKEN secret is set, or the run fails at
 #   Setup EAS):
 # REPO=transistir/coiab-app
+# Stamp the cutoff BEFORE dispatching: if the dispatch request itself is
+# slow, a stamp taken after it (even 30 s back) can postdate the run's
+# createdAt and the poll below would never match it.
+DISPATCH_TS=$(date -u +%Y-%m-%dT%H:%M:%SZ -d '30 seconds ago')
 gh workflow run storybook-capture.yml -R $REPO --ref <branch>
 # Bind RUN to THIS dispatch. Two hazards: an unfiltered --limit 1 can grab
 # a prior or concurrent run from ANOTHER branch (every later step — wait,
@@ -71,16 +75,18 @@ gh workflow run storybook-capture.yml -R $REPO --ref <branch>
 # retry paths in §3/§5 re-dispatch on the SAME branch, where a fixed sleep
 # is not enough — if the new run takes longer than the sleep to register,
 # --limit 1 returns the PREVIOUS, possibly already-completed run and the
-# gate certifies its stale artifacts. So record the dispatch time and poll
-# until a run created after it appears. The timestamp is taken 30 s in the
-# past to tolerate clock skew between the local clock and GitHub's.
-DISPATCH_TS=$(date -u +%Y-%m-%dT%H:%M:%SZ -d '30 seconds ago')
+# gate certifies its stale artifacts. So poll until a run created after
+# the stamp appears. The stamp is taken 30 s in the past to tolerate clock
+# skew between the local clock and GitHub's.
 RUN=""
 for ATTEMPT in $(seq 1 15); do
   RUN=$(gh run list -R $REPO --workflow storybook-capture.yml --branch <branch> --event workflow_dispatch --limit 5 --json databaseId,createdAt -q ".[] | select(.createdAt > \"$DISPATCH_TS\") | .databaseId" | head -1)
   [ -n "$RUN" ] && break
   sleep 10
 done
+# Final lookup after the last sleep, so a run registering during the
+# closing interval is seen rather than reported missing.
+[ -n "$RUN" ] || RUN=$(gh run list -R $REPO --workflow storybook-capture.yml --branch <branch> --event workflow_dispatch --limit 5 --json databaseId,createdAt -q ".[] | select(.createdAt > \"$DISPATCH_TS\") | .databaseId" | head -1)
 # Bounded like §3's retry budget: a dispatch that never registers a run
 # (rejected ref, expired token) must fail loudly, not poll forever.
 [ -n "$RUN" ] || { echo "no run registered within 150s of the dispatch"; exit 1; }

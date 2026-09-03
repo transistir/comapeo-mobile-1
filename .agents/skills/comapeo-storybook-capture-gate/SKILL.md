@@ -55,10 +55,15 @@ one key (`Settings`) that is never registered and is not navigable.
 ## 2. Trigger and wait
 
 ```sh
-# The repo that owns the branch — implementation PRs: comapeo-mobile-1.
-# (`gh workflow run --ref` resolves the branch IN the -R repo; a comapeo-mobile-1
-# branch does not exist in coiab-app.)
+# SET REPO TO THE REPO THAT OWNS THE BRANCH — every command below uses it.
+# `gh workflow run --ref` resolves the ref IN the -R repo, so the dispatch
+# must go where the branch actually exists:
+#   implementation PR branch (lives in comapeo-mobile-1):
 REPO=transistir/comapeo-mobile-1
+#   coiab-app sync branch (exists only in coiab-app — dispatch there, and
+#   only after coiab-app's EXPO_TOKEN secret is set, or the run fails at
+#   Setup EAS):
+# REPO=transistir/coiab-app
 gh workflow run storybook-capture.yml -R $REPO --ref <branch>
 sleep 15
 RUN=$(gh run list -R $REPO --workflow storybook-capture.yml --limit 1 --json databaseId -q '.[0].databaseId')

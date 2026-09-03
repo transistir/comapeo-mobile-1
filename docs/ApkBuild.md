@@ -20,25 +20,29 @@ synced there.
 
 ## Get the APK
 
-Capture the run ID created by the dispatch and pass it explicitly, so an
-overlapping or earlier build can never be downloaded by mistake:
+`gh workflow run` does not print the run it creates, so correlate by
+timestamp: capture the UTC time *before* dispatching, then select the newest
+run created after it. This cannot pick up an earlier run, and two runs
+started in the same second for the same ref build the same APK anyway.
 
 ```sh
+SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 gh workflow run build-apk.yml --repo transistir/comapeo-mobile-1 --ref develop
-sleep 5   # let the run register
-RUN_ID=$(gh run list --workflow=build-apk.yml --repo transistir/comapeo-mobile-1 \
-  --limit 1 --json databaseId --jq '.[0].databaseId')
+RUN_ID=""   # poll until the dispatched run registers
+while [ -z "$RUN_ID" ]; do
+  sleep 5
+  RUN_ID=$(gh run list --workflow=build-apk.yml --repo transistir/comapeo-mobile-1 \
+    --json databaseId,createdAt --jq "map(select(.createdAt > \"$SINCE\")) | sort_by(.createdAt) | last | .databaseId // empty")
+done
+echo "Run: https://github.com/transistir/comapeo-mobile-1/actions/runs/$RUN_ID"
 gh run watch "$RUN_ID" --repo transistir/comapeo-mobile-1   # optional: follow the run
 gh run download "$RUN_ID" --repo transistir/comapeo-mobile-1 -n coiab-apk -D build/
 ```
 
-If `gh run list` still shows the previous run, wait a few more seconds and
-re-run the `RUN_ID=$(...)` line before downloading.
+The echoed run URL makes the selected run explicit before anything is
+downloaded — cite it as evidence when posting build results on an issue.
 
 The workflow uploads the APK as the `coiab-apk` artifact (30-day retention).
-The run page URL (`gh run view "$RUN_ID" --repo transistir/comapeo-mobile-1
---json url --jq .url`) should be cited as evidence when posting build results
-on an issue.
 
 ## Profiles
 

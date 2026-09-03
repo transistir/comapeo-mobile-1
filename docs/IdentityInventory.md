@@ -123,13 +123,28 @@ Colors live in four places:
    `BottomSheetWrapper.tsx:70`, `MenuListItem.tsx:59`, `ListItemIcon.tsx:26`,
    `ListItem.tsx:102`, `ListItemText.tsx:53,58`, `IntroToCoMapeo.tsx:141`,
    `ObservationFilterToggle.tsx:139`, `LanguageSettings.tsx:77,111`,
-   `ObscurePasscode.tsx:69` — a hex-only migration leaves these behind.
-4. Colors baked into the SVG assets of `src/frontend/images/**`: **61 of the
-   77 non-logo SVGs** carry at least one literal hex. All four logo assets
-   of section 2 are excluded here (`CoMapeoLogo.svg`, `CoMapeoShield.svg`,
+   `ObscurePasscode.tsx:69` — and **37 named-color-literal sites over 5
+   distinct values** (React Native accepts CSS color keywords in any color
+   prop, in both style-object form — `color: 'white'` — and JSX-attribute
+   form — `placeholderTextColor="silver"`): `white` ×16, `silver` ×10
+   (the placeholder color across the manual-GPS forms —
+   `ManualGpsScreen/DdForm.tsx`, `DmsForm/DmsInputGroup.tsx`,
+   `UtmForm.tsx`, `SaveTrack/TrackDescriptionField.tsx`), `black` ×9
+   (e.g. `CameraView.tsx:182`), `lightgray` ×1, `red` ×1 (`AddPhoto.tsx:60`);
+   19 files carry at least one. A migration keyed on hex and `rgba()`
+   literals alone leaves these behind too.
+4. Colors baked into the SVG assets of `src/frontend/images/**`: **68 of
+   the 77 non-logo SVGs** carry at least one literal color (hex or named),
+   over **314 literal color sites** — 211 hex + **103 named `fill`/`stroke`
+   keywords** (`black` ×55, `white` ×48). All four logo assets of section 2
+   are excluded here (`CoMapeoLogo.svg`, `CoMapeoShield.svg`,
    `CoMapeoText.svg`, `TopoLogo.svg` — owned by #20; the shield and text
    logos carry their own `#E86826`/`#FF9E00` and would otherwise be counted
-   as icon-scope colors): **53 distinct colors over 211 use sites**
+   as icon-scope colors). Seven non-logo assets contain **named colors and
+   no hex at all** — `delete.svg`, `StartTracking.svg`, `Map.svg`,
+   `SpeechBubble.svg`, `StopTracking.svg`, `ClockOutlined.svg`,
+   `Chain.svg` — a hex-only scan of the artwork misses them entirely.
+   The hex portion: **53 distinct colors over the 211 hex sites**
    (case-insensitive, shorthand normalized — `#000` ×13,
    `#666`/`#999`/`#CCC` ×1 each), led by
    `#000000` ×26, `#333333` ×16, `#E86826` ×14, `#FFD748`/`#757575` ×11,
@@ -150,8 +165,9 @@ Colors live in four places:
 "no token file" (one exists) but "token file is partial and pre-rebrand": no
 typography/spacing tokens (the scales themselves exist — `HeaderText` six
 variants, `BodyText` five), 26 distinct inline hexes (61 use sites, shorthand
-normalized) plus 11 `rgba()` sites (6 values) bypass it, another 53 distinct
-colors are welded into 61 SVG assets that only asset replacement
+normalized) plus 11 `rgba()` sites (6 values) and 37 named-color literals
+(5 values) bypass it, another 53 distinct hexes (plus 103 named `fill`/
+`stroke` keywords) are welded into 68 SVG assets that only asset replacement
 (#20-adjacent) can change, and its palette is CoMapeo's.
 
 ## 5. Gaps and proposed defaults
@@ -159,7 +175,7 @@ colors are welded into 61 SVG assets that only asset replacement
 | # | Gap | Proposal (default if Figma unavailable) |
 |---|-----|------------------------------------------|
 | 1 | **Figma file URL never recorded** — the canonical design source (per #17) is unlocatable from the board; #53 tracks Figma MCP | Record the link on coiab-app#18 as soon as anyone has it. Until then, treat every visual value in this repo as provisional. |
-| 2 | **Token module is partial and pre-rebrand** — `lib/styles.ts` (29 colors, ~157 importers) carries the CoMapeo palette, has no typography/spacing tokens, and 26 distinct inline hexes plus 11 `rgba()` sites bypass it | #19 should evolve `lib/styles.ts` in place (swap palette values to COIAB, add typography/spacing tokens) rather than add a parallel module — 157 importers already point there; migrate the inline hexes and `rgba()` sites to it incrementally, and extend the existing `HeaderText`/`BodyText` variant scales rather than a parallel typographic abstraction |
+| 2 | **Token module is partial and pre-rebrand** — `lib/styles.ts` (29 colors, ~157 importers) carries the CoMapeo palette, has no typography/spacing tokens, and 26 distinct inline hexes plus 11 `rgba()` sites and 37 named-color literals bypass it | #19 should evolve `lib/styles.ts` in place (swap palette values to COIAB, add typography/spacing tokens) rather than add a parallel module — 157 importers already point there; migrate the inline hexes, `rgba()` sites, and named-color literals to it incrementally, and extend the existing `HeaderText`/`BodyText` variant scales rather than a parallel typographic abstraction |
 | 3 | **Visual assets are 100% upstream CoMapeo** (section 2) | Replace icon/splash/logos with COIAB art in #20. Do **not** derive COIAB colors from the current CoMapeo assets. |
 | 4 | **No COIAB brand reference captured** | Public reference points: [coiab.org.br](https://coiab.org.br) (official site) and its logo in official use. Not a substitute for the approved Figma. |
 

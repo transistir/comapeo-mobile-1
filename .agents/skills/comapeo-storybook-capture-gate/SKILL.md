@@ -153,8 +153,12 @@ sustained change partway through the run, or an unexpectedly large frame for
 a screen you know is mostly empty.
 
 Some frames are legitimately not byte-stable between runs — compare those by
-eye, never by size: any screen showing native device-info values (About) or
-live location (the coordinate-format examples).
+eye, never by size: any screen showing native device-info values (About),
+live location (the coordinate-format examples), or
+`012-flows-createobservation--observation-detail` (renders the seeded
+observation's creation date and time, which changes on every run regardless
+of seeding — judge it on content: same preset, same coordinates, same map
+tiles, not on bytes).
 
 ## 5. Fix, then re-run
 

@@ -35,9 +35,13 @@ Relevant user-level skills: `senior-junior` (acpx junior agent flow),
 `pr-review-resolver`, `resolve-pr-feedback`, `fetch-pr-unresolved-feedback`,
 `writing-plans`, `executing-plans`, `code-review`.
 
-Repo skills (`.claude/skills` → `.agents/skills`):
-`comapeo-storybook-capture` + `comapeo-storybook-capture-gate` (UI evidence),
-`rebrand-comapeo`.
+Repo skills: `comapeo-storybook-capture` +
+`comapeo-storybook-capture-gate` (UI evidence) — portable layout (real files
+in `.agents/skills`, symlinked at `.claude/skills`); and `rebrand-comapeo` —
+**Claude-only today**: a real directory under `.claude/skills` with no
+`.agents/skills` counterpart, so Codex/Cursor/OpenCode and the other
+harness-neutral readers don't see it. Moving it into `.agents/skills` with a
+`.claude/skills` symlink is a one-line change when another harness needs it.
 
 ## 1. Execution (implementing a work item)
 
@@ -72,7 +76,7 @@ Answers the issue's second open question directly.
 |-------|--------|
 | Plugin exists? | Yes — three of them: `codex` (`@codex review` PR comments — used on PRs #72–#76), `review-loop@hamel-review` (implement → Codex reviews → Claude addresses loop), `claude-delegator` (Code Reviewer + Security experts) |
 | Configuration? | None — all enabled |
-| Composition? | The two-family rule (docs/FactoryProcess.md §1 stage 4) = `codex` plugin (family 1) + native Agent-tool Opus subagent (family 2), looped until both are clean. Proven composition: every Sprint 1 PR went through it |
+| Composition? | The two-family rule (docs/FactoryProcess.md §1 stage 4, PR #76) = `codex` plugin (family 1) + native Agent-tool Opus subagent (family 2), looped until both are clean. Proven composition: every Sprint 1 PR went through it |
 | New plugin? | **No** |
 
 Note on composition choice: `review-loop` drives a local
@@ -88,8 +92,8 @@ one the factory process mandates.
 | Order | Answer |
 |-------|--------|
 | Plugin exists? | No plugin needed — repo skills `comapeo-storybook-capture` (+gate) cover UI evidence via CI; `gh` CLI + Actions artifacts cover builds and run logs |
-| Configuration? | Storybook Flow Capture workflow dispatch (already wired in CI) |
-| Composition? | Handoff template from docs/FactoryProcess.md §4 (#16, PR #76) — evidence comment on the issue, screenshots/logs embedded, artifacts linked |
+| Configuration? | Storybook Flow Capture workflow dispatch (wired in CI and proven green on comapeo-mobile-1 during Sprint 1; **on coiab-app the dispatch currently fails at Setup EAS until the `EXPO_TOKEN` secret is set there** — known gap recorded in AGENTS.md, "Coiab CI environment") |
+| Composition? | Handoff template from docs/FactoryProcess.md §4 (introduced by #16, PR #76 — open at the time of this review, hence not yet in the tree you are reading) — evidence comment on the issue, screenshots/logs embedded, artifacts linked |
 | New plugin? | **No** — with one tracked exception: reading approved designs needs Figma MCP, which is coiab-app#53, not factory infrastructure |
 
 ## 5. Recommendation

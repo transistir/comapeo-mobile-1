@@ -105,8 +105,9 @@ Colors live in four places:
    `#0066FF` ×7. Examples: `OrangeExchange.svg` (`#E86826`),
    `AddProject.svg`/`DownArrow.svg`/`SendingIcon.svg`/`CheckMark.svg`
    (`#0066FF`). Overlap with the token module: 12 of the 54 also exist in
-   `styles.ts` (`COMAPEO_BLUE` `#0066FF`, `DARK_ORANGE` `#E86826`, and the
-   shared greys/black/white/red); the most common **SVG-only** colors —
+   `styles.ts` (`COMAPEO_BLUE` `#0066FF`, `DARK_ORANGE` `#E86826`,
+   `DARK_GREEN` `#59A553`, `SYNC_BACKGROUND` `#2348B2`, and the shared
+   greys/black/white/red); the most common **SVG-only** colors —
    `#FFD748` ×11, `#FFBC47`/`#C86F34` ×10, `#C19B66`/`#804B24` ×8,
    `#FFCB4B` ×6 — appear in no `.ts`/`.tsx` at all. These colors live
    in the artwork itself: no token module can restyle them, they change only

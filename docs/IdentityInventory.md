@@ -83,23 +83,25 @@ Colors live in three places:
    | | `#E5E5EB` (grey) |
 
 3. Inline hex literals scattered across `src/frontend/**` **outside the two
-   centralized files** (top offenders by case-insensitive count of *uses*,
+   centralized files** (case-insensitive count of *uses* in `.ts`/`.tsx`,
    excluding the declarations in `lib/styles.ts`/`constants.ts`, which belong
-   to categories 1–2 above: `#FFFFFF` ×4, `#FF0000` ×4, `#CCE0FF` ×4,
-   `#FFF5EB` ×4, `#CCCCD6` ×3, `#59A553` ×2, `#3C69F6` ×2, `#0066FF` ×1,
-   plus ~30 more single-use hexes) — these bypass `styles.ts` entirely.
+   to categories 1–2 above: 31 distinct hexes, led by `#FFFFFF` ×4,
+   `#FFF5EB` ×4, `#FF0000` ×4, `#CCE0FF` ×4, `#F3F3F3` ×3, `#EAEAEA` ×3,
+   `#CCCCD6` ×3; the CoMapeo brand hexes `#59A553` ×2, `#3C69F6` ×2 and
+   `#0066FF` ×1 are also present, and 14 of the 31 occur exactly once) —
+   these bypass `styles.ts` entirely.
 
 `App.tsx` wires providers only — there is no `ThemeProvider`. The gap is not
 "no token file" (one exists) but "token file is partial and pre-rebrand": no
-typography/spacing tokens, ~40 inline hexes bypass it, and its palette is
-CoMapeo's.
+typography/spacing tokens, 31 distinct inline hexes (57 use sites) bypass
+it, and its palette is CoMapeo's.
 
 ## 5. Gaps and proposed defaults
 
 | # | Gap | Proposal (default if Figma unavailable) |
 |---|-----|------------------------------------------|
 | 1 | **Figma file URL never recorded** — the canonical design source (per #17) is unlocatable from the board; #53 tracks Figma MCP | Record the link on coiab-app#18 as soon as anyone has it. Until then, treat every visual value in this repo as provisional. |
-| 2 | **Token module is partial and pre-rebrand** — `lib/styles.ts` (29 colors, ~157 importers) carries the CoMapeo palette, has no typography/spacing tokens, and ~40 inline hexes bypass it | #19 should evolve `lib/styles.ts` in place (swap palette values to COIAB, add typography/spacing tokens) rather than add a parallel module — 157 importers already point there; migrate the inline hexes to it incrementally |
+| 2 | **Token module is partial and pre-rebrand** — `lib/styles.ts` (29 colors, ~157 importers) carries the CoMapeo palette, has no typography/spacing tokens, and 31 distinct inline hexes bypass it | #19 should evolve `lib/styles.ts` in place (swap palette values to COIAB, add typography/spacing tokens) rather than add a parallel module — 157 importers already point there; migrate the inline hexes to it incrementally |
 | 3 | **Visual assets are 100% upstream CoMapeo** (section 2) | Replace icon/splash/logos with COIAB art in #20. Do **not** derive COIAB colors from the current CoMapeo assets. |
 | 4 | **No COIAB brand reference captured** | Public reference points: [coiab.org.br](https://coiab.org.br) (official site) and its logo in official use. Not a substitute for the approved Figma. |
 

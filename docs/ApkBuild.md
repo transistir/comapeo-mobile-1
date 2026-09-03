@@ -20,27 +20,38 @@ synced there.
 
 ## Get the APK
 
-`gh workflow run` does not print the run it creates, so correlate by
-timestamp: capture the UTC time *before* dispatching, then select the newest
-run created after it. This cannot pick up an earlier run, and two runs
-started in the same second for the same ref build the same APK anyway.
+`gh workflow run` does not print the run it creates, so correlate the
+download with the dispatch in three steps: capture the UTC time *before*
+dispatching, filter the run list to the branch you dispatched on, and take
+the newest run created at or after that timestamp.
 
 ```sh
+REPO=transistir/comapeo-mobile-1
+REF=develop   # the --ref you will dispatch on
 SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-gh workflow run build-apk.yml --repo transistir/comapeo-mobile-1 --ref develop
+gh workflow run build-apk.yml --repo "$REPO" --ref "$REF"
 RUN_ID=""   # poll until the dispatched run registers
 while [ -z "$RUN_ID" ]; do
   sleep 5
-  RUN_ID=$(gh run list --workflow=build-apk.yml --repo transistir/comapeo-mobile-1 \
-    --json databaseId,createdAt --jq "map(select(.createdAt > \"$SINCE\")) | sort_by(.createdAt) | last | .databaseId // empty")
+  RUN_ID=$(gh run list --workflow=build-apk.yml --repo "$REPO" --branch "$REF" \
+    --json databaseId,createdAt \
+    --jq "map(select(.createdAt >= \"$SINCE\")) | sort_by(.createdAt) | last | .databaseId // empty")
 done
-echo "Run: https://github.com/transistir/comapeo-mobile-1/actions/runs/$RUN_ID"
-gh run watch "$RUN_ID" --repo transistir/comapeo-mobile-1   # optional: follow the run
-gh run download "$RUN_ID" --repo transistir/comapeo-mobile-1 -n coiab-apk -D build/
+echo "Run: https://github.com/$REPO/actions/runs/$RUN_ID"
+gh run watch "$RUN_ID" --repo "$REPO"   # optional: follow the run
+gh run download "$RUN_ID" --repo "$REPO" -n coiab-apk -D build/
 ```
 
-The echoed run URL makes the selected run explicit before anything is
-downloaded — cite it as evidence when posting build results on an issue.
+`>=` (not `>`) matters: `createdAt` is second-precision, and a run created in
+the same second as `SINCE` is the dispatched one. The `--branch` filter rules
+out concurrent dispatches on other branches.
+
+Two residual ambiguities are documented rather than automated: `gh run list`
+cannot filter by the `profile` input, so two same-second dispatches on the
+same branch with different profiles are indistinguishable in the list (the
+echoed run URL shows the input on the run page — check it if you race
+dispatches), and the GitHub CLI offers no dispatch correlation value. In
+practice: dispatch one build per branch at a time and confirm the echoed URL.
 
 The workflow uploads the APK as the `coiab-apk` artifact (30-day retention).
 

@@ -24,10 +24,13 @@ on:
   workflow_dispatch:
     inputs:
       profile:
-        description: 'eas.json build profile'
+        description: 'eas.json build profile (APK-producing only)'
         required: false
         default: 'release-candidate'
-        type: string
+        type: choice
+        options:
+          - release-candidate
+          - pre-release
 
 jobs:
   apk:

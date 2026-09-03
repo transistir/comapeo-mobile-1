@@ -64,6 +64,14 @@ REPO=transistir/comapeo-mobile-1
 #   only after coiab-app's EXPO_TOKEN secret is set, or the run fails at
 #   Setup EAS):
 # REPO=transistir/coiab-app
+# Snapshot the run ids ALREADY on this branch BEFORE dispatching. The
+# timestamp cutoff alone cannot identify this dispatch: the stamp is taken
+# 30 s in the past (clock-skew tolerance), so a retry run created inside
+# that window — or any pre-dispatch run — still passes the createdAt check
+# and would be bound as ours. Excluding the snapshotted ids closes that
+# hole; the residual race (a concurrent dispatch landing between the
+# snapshot and this one) is milliseconds wide instead of 30 s.
+PRE_IDS=$(gh run list -R $REPO --workflow storybook-capture.yml --branch <branch> --event workflow_dispatch --limit 20 --json databaseId -q '[.[].databaseId] | tostring')
 # Stamp the cutoff BEFORE dispatching: if the dispatch request itself is
 # slow, a stamp taken after it (even 30 s back) can postdate the run's
 # createdAt and the poll below would never match it.
@@ -75,18 +83,17 @@ gh workflow run storybook-capture.yml -R $REPO --ref <branch>
 # retry paths in §3/§5 re-dispatch on the SAME branch, where a fixed sleep
 # is not enough — if the new run takes longer than the sleep to register,
 # --limit 1 returns the PREVIOUS, possibly already-completed run and the
-# gate certifies its stale artifacts. So poll until a run created after
-# the stamp appears. The stamp is taken 30 s in the past to tolerate clock
-# skew between the local clock and GitHub's.
+# gate certifies its stale artifacts. So poll until a run that is BOTH
+# newer than the stamp AND absent from the pre-dispatch snapshot appears.
 RUN=""
 for ATTEMPT in $(seq 1 15); do
-  RUN=$(gh run list -R $REPO --workflow storybook-capture.yml --branch <branch> --event workflow_dispatch --limit 5 --json databaseId,createdAt -q ".[] | select(.createdAt > \"$DISPATCH_TS\") | .databaseId" | head -1)
+  RUN=$(gh run list -R $REPO --workflow storybook-capture.yml --branch <branch> --event workflow_dispatch --limit 5 --json databaseId,createdAt -q ".[] | select(.createdAt > \"$DISPATCH_TS\") | select(. as \$r | (\"$PRE_IDS\" | fromjson | index(\$r.databaseId) | not)) | .databaseId" | head -1)
   [ -n "$RUN" ] && break
   sleep 10
 done
 # Final lookup after the last sleep, so a run registering during the
 # closing interval is seen rather than reported missing.
-[ -n "$RUN" ] || RUN=$(gh run list -R $REPO --workflow storybook-capture.yml --branch <branch> --event workflow_dispatch --limit 5 --json databaseId,createdAt -q ".[] | select(.createdAt > \"$DISPATCH_TS\") | .databaseId" | head -1)
+[ -n "$RUN" ] || RUN=$(gh run list -R $REPO --workflow storybook-capture.yml --branch <branch> --event workflow_dispatch --limit 5 --json databaseId,createdAt -q ".[] | select(.createdAt > \"$DISPATCH_TS\") | select(. as \$r | (\"$PRE_IDS\" | fromjson | index(\$r.databaseId) | not)) | .databaseId" | head -1)
 # Bounded like §3's retry budget: a dispatch that never registers a run
 # (rejected ref, expired token) must fail loudly, not poll forever.
 [ -n "$RUN" ] || { echo "no run registered within 150s of the dispatch"; exit 1; }

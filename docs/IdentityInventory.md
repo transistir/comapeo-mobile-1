@@ -88,7 +88,7 @@ Colors live in three places:
    | | `#E5E5EB` (grey) |
 
 3. Inline hex literals scattered across `src/frontend/**` **outside the two
-   centralized files** (non-test `.ts`/`.tsx`, case-insensitive, shorthand
+   centralized files** (non-test, non-story `.ts`/`.tsx`, case-insensitive, shorthand
    normalized — `#FFF` counts as `#FFFFFF` — and excluding the declarations
    in `lib/styles.ts`/`constants.ts`, which belong to categories 1–2 above:
    26 distinct hexes over 61 use sites, led by `#FFFFFF` ×12 (8 of them

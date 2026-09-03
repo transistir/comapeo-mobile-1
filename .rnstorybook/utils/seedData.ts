@@ -266,7 +266,7 @@ export function selectSeedPosition(
  * after every seeded one.
  */
 export function matchSeedIndex(
-  observation: {lat: number | null; lon: number | null},
+  observation: {lat?: number | null; lon?: number | null},
   bbox: BBox,
   maxIndex: number,
 ): number {

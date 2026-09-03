@@ -21,9 +21,11 @@ registrado como default assumido.)
   `docs/EndToEndTests/E2EWithAppium.md:62`).
 - **Nomear o dispositivo QA antes de esperar o onboarding:** o APK candidato
   usa o perfil `release-candidate` (perfil default do comando canônico,
-  decisão registrada no handoff da #13; todo perfil não-`production` do
-  `eas.json` seta a mesma variante), que seta `APP_VARIANT=releaseCandidate`
-  (`eas.json`) — nessa variante o app abre PRIMEIRO na tela de nomeação de
+  decisão registrada no handoff da #13), que seta `APP_VARIANT=releaseCandidate`
+  (`eas.json`; nem todo perfil não-`production` seta essa variante: `test` e
+  `storybook` compartilham `releaseCandidate`, `pre-release` seta `preRelease`
+  — variante que também passa o portão QA — e `development` seta `development`,
+  que NÃO passa o portão) — nessa variante o app abre PRIMEIRO na tela de nomeação de
   dispositivo QA (`src/frontend/AppNavigator.tsx`: `isQABuild &&
   !qaDeviceName` renderiza `SetQADeviceNameScreen`) e só depois segue ao
   onboarding. Sem nomear o dispositivo QA a verificação do passo 1 nunca é
@@ -35,12 +37,20 @@ registrado como default assumido.)
   não basta): o MESMO APK candidato instalado (a tela de convite exige a
   mesma versão do app nos dois dispositivos, ver
   `src/frontend/screens/YourTeam/SelectInviteDevice.tsx`), os dois na mesma
-  rede Wi-Fi, e o segundo dispositivo com o onboarding ao menos até a
-  nomeação concluída — um dispositivo zerado **aparece** na lista de
-  convites como entrada sem nome legível (`SelectInviteDevice.tsx` renderiza
+  rede Wi-Fi, e o segundo dispositivo com o onboarding CONCLUÍDO e parado na
+  tela `JoinProjectIntro` (botão "Participe de um projeto" na tela de sucesso
+  do onboarding, `src/frontend/screens/Onboarding/Success.tsx`) ANTES do
+  passo 10: a aceitação do convite só segue o caminho seguro de onboarding
+  quando `JoinProjectIntro` está no estado de navegação
+  (`src/frontend/screens/Invites/InviteReceived.tsx:101-124` — com o
+  convidado parado em outra tela, o app reseta a navegação para a rota
+  `Home` do app já instalado); um dispositivo parado só até a nomeação
+  concluída ainda está na tela de sucesso, não em `JoinProjectIntro`.
+  Além disso, um dispositivo zerado **aparece** na lista de convites como
+  entrada sem nome legível (`SelectInviteDevice.tsx` renderiza
   `name || ''`; a lista filtra apenas membros existentes, não dispositivos
-  sem nome), mas o convite não conclui sem o onboarding completo. Nomear o
-  segundo dispositivo antes do passo 10 evita convidar a entrada errada.
+  sem nome) — completar o onboarding (e nomear) o segundo dispositivo antes
+  do passo 10 evita convidar a entrada errada.
 - Roteiro decorado/preso: a demo não improvisa passos fora desta lista.
 
 ## A jornada — 12 passos
@@ -61,7 +71,7 @@ demo continua.
 | 7 | Criar observação em Monitoramento | Categoria (ex. "Fiscalização rotineira") + foto + GPS salvos e visíveis |
 | 8 | Criar observação em Alertas | Categoria (ex. "Incêndio / fumaça") salva e visível |
 | 9 | Isolamento entre projetos | Cada observação aparece só no seu projeto; nada vaza entre Monitoramento e Alertas |
-| 10 | Convidar um segundo dispositivo; aceitar o convite | Convidado entra na organização e vê os dois projetos (#27) |
+| 10 | Convidar um segundo dispositivo; aceitar o convite (convidado já na tela `JoinProjectIntro` — pré-requisito acima) | Convidado entra na organização e vê os dois projetos (#27) |
 | 11 | *(desejável)* Configurar Remote Archive no nível da organização | Uma única URL aplica aos dois projetos (#36/#37) |
 | 12 | *(desejável)* Sincronização com o archive + indicador de conexão/reconexão | Sem regressão da sincronização existente (#38/#39) |
 

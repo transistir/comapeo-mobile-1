@@ -29,9 +29,16 @@ Stage rules that are easy to get wrong:
   oversight of the AGENTS.md remote table ("origin = the working repo"):
   code changes sit next to the upstream-sync base they will eventually ride
   (every implementation PR since #56 has targeted it), while the board side
-  of the factory — issues, evidence comments, labels, workflow dispatches —
-  stays on coiab-app. If the human owner wants code PRs on coiab-app instead,
-  change this bullet and the stage-3 row together.
+  of the factory — issues, evidence comments, labels — stays on coiab-app.
+  If the human owner wants code PRs on coiab-app instead, change this bullet
+  and the stage-3 row together.
+- **Workflow dispatches run in the repo that owns the branch.** `gh workflow
+  run --ref <branch>` resolves the ref inside the `-R` repo, so a
+  Storybook capture for an implementation PR head dispatches on
+  comapeo-mobile-1, where the branch lives — a coiab-app dispatch cannot see
+  it. coiab-app dispatches only make sense for branches that exist there
+  (sync branches), and coiab-app additionally needs its `EXPO_TOKEN` secret
+  set before its own captures pass Setup EAS.
 - Review severity: **BUG/RISK fixed immediately; every NIT verified against
   the code before applying** — reviewer claims are hypotheses.
 - Codex mechanics: `@codex review` comment on the PR; 👀 reaction = working,

@@ -16,8 +16,14 @@ For the capture pipeline's own mechanics and CI gotchas, see the
 ([`../comapeo-storybook-capture/SKILL.md`](../comapeo-storybook-capture/SKILL.md)).
 This skill is the PR-cycle wrapper around it.
 
-**Remote safety:** every `gh` write targets `transistir/coiab-app`.
-See AGENTS.md — never write to `digidem/*`.
+**Remote safety:** never write to `digidem/*` (fetch/diff/read only — see
+AGENTS.md). Workflow dispatches and PR comments go to the repo that **owns
+the branch**: implementation PR branches live in
+`transistir/comapeo-mobile-1`, so that is where captures dispatch. Only a
+branch that actually exists in `transistir/coiab-app` (a sync branch) can be
+captured there — `gh workflow run --ref` resolves the ref in the `-R` repo.
+Note: coiab-app's own dispatch currently fails at Setup EAS until the
+`EXPO_TOKEN` secret is set there.
 
 ## Why the vision pass is the point
 
@@ -49,17 +55,21 @@ one key (`Settings`) that is never registered and is not navigable.
 ## 2. Trigger and wait
 
 ```sh
-gh workflow run storybook-capture.yml -R transistir/coiab-app --ref <branch>
+# The repo that owns the branch — implementation PRs: comapeo-mobile-1.
+# (`gh workflow run --ref` resolves the branch IN the -R repo; a comapeo-mobile-1
+# branch does not exist in coiab-app.)
+REPO=transistir/comapeo-mobile-1
+gh workflow run storybook-capture.yml -R $REPO --ref <branch>
 sleep 15
-RUN=$(gh run list -R transistir/coiab-app --workflow storybook-capture.yml --limit 1 --json databaseId -q '.[0].databaseId')
+RUN=$(gh run list -R $REPO --workflow storybook-capture.yml --limit 1 --json databaseId -q '.[0].databaseId')
 ```
 
 Wait in the background rather than blocking a foreground call for the whole
 run:
 
 ```sh
-until [ "$(gh run view $RUN -R transistir/coiab-app --json status -q .status)" = "completed" ]; do sleep 120; done
-gh run view $RUN -R transistir/coiab-app --json conclusion -q .conclusion
+until [ "$(gh run view $RUN -R $REPO --json status -q .status)" = "completed" ]; do sleep 120; done
+gh run view $RUN -R $REPO --json conclusion -q .conclusion
 ```
 
 ## 3. If the run fails, classify before re-running
@@ -68,8 +78,8 @@ Do not blindly retry, and do not assume a failure means the code is wrong.
 Download the partial artifact and look:
 
 ```sh
-gh run download $RUN -R transistir/coiab-app -D ./caps
-gh run view $RUN -R transistir/coiab-app --log-failed | grep -iE "storybook-capture" | tail -25
+gh run download $RUN -R $REPO -D ./caps
+gh run view $RUN -R $REPO --log-failed | grep -iE "storybook-capture" | tail -25
 ```
 
 - **The last captured frame is correct but the run failed on the identity
@@ -85,7 +95,7 @@ and report rather than burning more cycles.
 ## 4. Vision review — every frame, not a sample
 
 ```sh
-gh run download $RUN -R transistir/coiab-app -D ./caps
+gh run download $RUN -R $REPO -D ./caps
 D=$(find ./caps -name captures.tsv | head -1 | xargs dirname)
 find "$D" -name '*.png' | wc -l          # must equal the manifest row count
 find "$D" -name '*failure*'              # must be empty
@@ -125,12 +135,12 @@ have not actually looked at.
 ## 6. Comment on the PR
 
 Only after the frames pass review. Include the artifact download link —
-`https://github.com/transistir/coiab-app/actions/runs/<RUN>/artifacts/<ARTIFACT_ID>`:
+`https://github.com/$REPO/actions/runs/<RUN>/artifacts/<ARTIFACT_ID>`:
 
 ```sh
-ART=$(gh api repos/transistir/coiab-app/actions/runs/$RUN/artifacts -q '.artifacts[0].id')
-NAME=$(gh api repos/transistir/coiab-app/actions/runs/$RUN/artifacts -q '.artifacts[0].name')
-gh pr comment <PR> -R transistir/coiab-app --body "..."
+ART=$(gh api repos/$REPO/actions/runs/$RUN/artifacts -q '.artifacts[0].id')
+NAME=$(gh api repos/$REPO/actions/runs/$RUN/artifacts -q '.artifacts[0].name')
+gh pr comment <PR> -R $REPO --body "..."
 ```
 
 The comment must state:

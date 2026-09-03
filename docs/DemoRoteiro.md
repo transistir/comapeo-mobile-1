@@ -19,7 +19,13 @@ registrado como default assumido.)
   `docs/EndToEndTests/E2EWithAppium.md:62`).
 - APK candidato (build pelo comando canônico da #13) instalado no dispositivo
   de demonstração.
-- Um segundo dispositivo/emulador disponível para o passo 10 (convite).
+- **Segundo dispositivo pronto antes do passo 10** (é bloqueador — "disponível"
+  não basta): o MESMO APK candidato instalado (a tela de convite exige a
+  mesma versão do app nos dois dispositivos, ver
+  `src/frontend/screens/YourTeam/SelectInviteDevice.tsx`), os dois na mesma
+  rede Wi-Fi, e o segundo dispositivo com o onboarding ao menos até a
+  nomeação concluída — um dispositivo zerado sem nome não aparece na lista
+  de convites.
 - Roteiro decorado/preso: a demo não improvisa passos fora desta lista.
 
 ## A jornada — 12 passos
@@ -75,5 +81,7 @@ demo continua.
 3. APK candidato (#43) gerado pelo comando canônico (#13).
 4. Regressões bloqueadoras (#44) zeradas.
 5. Pacote de evidências (#45) montado no template de handoff
-   (docs/FactoryProcess.md §4 — arquivo introduzido pelo PR
-   transistir/comapeo-mobile-1#76, aberto no momento desta revisão).
+   (docs/FactoryProcess.md §4). **Ordem obrigatória: o PR
+   transistir/comapeo-mobile-1#76 (que introduz o FactoryProcess.md) precisa
+   estar mergeado antes de montar este pacote** — sem ele o template não
+   existe nesta árvore.

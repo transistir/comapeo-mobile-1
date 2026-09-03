@@ -19,6 +19,12 @@ registrado como default assumido.)
   instalação já onboarded preserva estado — o app abre direto na Home e o
   passo 1 falha (aviso equivalente em
   `docs/EndToEndTests/E2EWithAppium.md:62`).
+- **Conceder as permissões de inicialização:** em toda primeira abertura no
+  Android, o app pede câmera e localização (fina + aproximada) logo no
+  arranque, antes de dispensar a splash (`src/frontend/App.tsx:230-253` —
+  pedido adiantado; cada funcionalidade re-pede a sua quando chega ao uso).
+  Conceder **ambas** ao abrir — negar câmera ou localização aqui faz o passo
+  7 (foto + GPS) falhar no seu critério de sucesso.
 - **Nomear o dispositivo QA antes de esperar o onboarding:** o APK candidato
   usa o perfil `release-candidate` (perfil default do comando canônico,
   default assumido registrado no handoff da #13), que seta `APP_VARIANT=releaseCandidate`

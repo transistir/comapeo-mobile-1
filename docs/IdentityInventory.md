@@ -37,7 +37,8 @@ identity.
 | App icon | `assets/icon.png` (1024×1024 RGBA) | Solid black background; "CoMapeo" wordmark — "Co" in orange (≈ `#F5A623`), "Mapeo" in white, bold sans-serif |
 | Splash | `assets/splash.png` (1024×1024 RGBA) | Solid black background; cobalt-blue topographic blob (≈ `#1E4FA8`); same "CoMapeo" wordmark centered |
 | In-app logos | `src/frontend/images/CoMapeoLogo.svg`, `CoMapeoShield.svg`, `CoMapeoText.svg`, `TopoLogo.svg` | CoMapeo marks used in onboarding (`IntroToCoMapeo` = TopoLogo + CoMapeoText, `DataPrivacy` = CoMapeoShield), `AuthScreen` (CoMapeoLogo), and `ComapeoSettings/DataAndPrivacy` (CoMapeoShield) |
-| User-visible "CoMapeo" copy | 34 non-test files under `src/frontend/` | Not only onboarding (`IntroToCoMapeo`, `DataPrivacy`, `MapOnYourOwnIntro`): the tracking notification in `hooks/useTracking.ts` ("CoMapeo is tracking your location"), `AuthScreen.tsx`, `CameraView.tsx`, `DrawerMenu.tsx`, the `ComapeoSettings/*` screens, `Observation/Buttons.tsx`, `PhotoPreviewModal/AttachedPhotoPreviewModal.tsx`, and more. Any rebrand pass must sweep all 34, not just onboarding. |
+| User-visible "CoMapeo" copy | 34 non-test files under `src/frontend/` | Not only onboarding (`IntroToCoMapeo`, `DataPrivacy`, `MapOnYourOwnIntro`): the tracking notification in `hooks/useTracking.ts` ("CoMapeo is tracking your location"), `AuthScreen.tsx`, `CameraView.tsx`, `DrawerMenu.tsx`, the `ComapeoSettings/*` screens, `Observation/Buttons.tsx`, `PhotoPreviewModal/AttachedPhotoPreviewModal.tsx`, and more. Any rebrand pass must sweep all 34 **plus the runtime copy outside `src/frontend/`** (next row), not just onboarding. |
+| User-visible "CoMapeo" copy outside `src/frontend/` | `messages/<locale>/{primary,secondary}.json` and `app.json` | Two places: (1) translation sources in `messages/` — 8 locales (`en-US`, `es-419`, `pt-BR`, `id-ID`, `fr-FR`, `de-DE`, `nl-NL`, `ja-JP`), `primary.json` + `secondary.json` each, ~560 "CoMapeo" occurrences total (e.g. pt-BR: "Configurações do CoMapeo", "Sobre CoMapeo"). They compile to `translations/*.json` via `npm run build:translations` (`scripts/build-translations.mjs`) and load at runtime through `src/frontend/lib/intl.ts` — edit `messages/`, never the compiled output. (2) `app.json` `ios.infoPlist.NSLocalNetworkUsageDescription` ("CoMapeo uses the local network to discover and sync with nearby devices in your project.") — the iOS local-network permission prompt; OS-level, outside the translation pipeline. |
 
 ## 3. Typography
 
@@ -63,7 +64,7 @@ Colors live in three places:
    existing token entry point — but it carries the **upstream CoMapeo
    palette**, not a COIAB one.
 2. `src/frontend/constants.ts` — the five project-card colors (verbatim
-   upstream: identical hexes exist in `digidem/comapeo-mobile`'
+   upstream: identical hexes exist in `digidem/comapeo-mobile`'s
    `constants.ts`; they arrived with the fork, they were not chosen for
    COIAB). Note `LIGHT_ORANGE`/`LIGHT_GREEN` in `styles.ts` duplicate two of
    these hexes:
@@ -102,9 +103,12 @@ CoMapeo's.
 fork (`git log -S '#FFF5EB'` traces them to upstream commits). Until the
 Figma file is linked, #19 has no in-repo source to draw a COIAB palette
 from; if a provisional palette is needed before then, keep the five project
-colors for project-picker cards only (they are already in that UI) and leave
-every other surface untouched — and flag any PR that ships provisional
-values as final.
+colors only on the project surfaces that already render them — the
+edit-project color picker (`ProjectSettings/EditProjectDetails.tsx`) and the
+`DEFAULT_PROJECT_COLOR` fallback shown on project cards
+(`hooks/useProjectRoleAndDetails.ts`, `RemovedFromProjectBottomSheet.tsx`)
+— and leave every other surface untouched, flagging any PR that ships
+provisional values as final.
 
 ## 7. What this document is not
 

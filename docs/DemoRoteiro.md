@@ -12,6 +12,11 @@ registrado como default assumido.)
 
 ## Pré-condições
 
+- **Dispositivo de demonstração limpo:** desinstalar o app (ou limpar os
+  dados do aplicativo) antes do passo 1. Instalar o APK por cima de uma
+  instalação já onboarded preserva estado — o app abre direto na Home e o
+  passo 1 falha (aviso equivalente em
+  `docs/EndToEndTests/E2EWithAppium.md:62`).
 - APK candidato (build pelo comando canônico da #13) instalado no dispositivo
   de demonstração.
 - Um segundo dispositivo/emulador disponível para o passo 10 (convite).
@@ -70,4 +75,5 @@ demo continua.
 3. APK candidato (#43) gerado pelo comando canônico (#13).
 4. Regressões bloqueadoras (#44) zeradas.
 5. Pacote de evidências (#45) montado no template de handoff
-   (docs/FactoryProcess.md §4).
+   (docs/FactoryProcess.md §4 — arquivo introduzido pelo PR
+   transistir/comapeo-mobile-1#76, aberto no momento desta revisão).

@@ -19,7 +19,7 @@ transistir/comapeo-mobile-1#20 and transistir/comapeo-mobile-1#51.)
 | 4 | **Review** — two reviewer families over the same diff | Codex (`@codex review` PR comment) + a second family (Opus subagent) | review comments / threads | both families report clean, **zero unresolved threads** |
 | 5 | **CI** — all checks on the PR head | GitHub Actions | green runs | all checks green; UI changes additionally need the Storybook Flow Capture workflow green |
 | 6 | **Evidence handoff** — post the evidence comment on the coiab-app issue in the template below | agent | one evidence comment per issue | comment posted; PR body links to it |
-| 7 | **Human QA** — human reads evidence, merges or rejects | human | merge / rejection notes | entry: issue carries `ready-for-human-review` (applied at the end of stage 6). Exit: the human merges the PR or rejects with notes. **The factory never merges — delivery PRs and SPEC PRs alike.** |
+| 7 | **Human QA** — human reads evidence, merges or rejects | human | merge / rejection notes | entry: issue carries `ready-for-human-review` (applied at the end of stage 6). Exit: the human merges the PR or rejects with notes. **The factory never merges — delivery PRs and SPEC PRs alike.** After a successful merge the same human closes the coiab-app issue (the board is the source of truth — an open `ready-for-human-review` issue reads as still awaiting approval); if the issue is left open deliberately, remove the label so the board stops counting it as pending. |
 
 Stage rules that are easy to get wrong:
 
@@ -87,8 +87,12 @@ State labels are replaced as the flow advances (`spec-pending` →
 After a stage-7 rejection, the human removes `ready-for-human-review` and
 re-applies `spec-approved` — or, for SPEC-n/a items (decision records and
 docs), whatever pre-review state the item actually carried — so the delivery
-reads as implemented but not accepted; the agent resumes at stage 4 to
-address the rejection notes. A final rejection — no rework wanted — closes
+reads as implemented but not accepted; the agent resumes at **stage 3**
+(implementation and self-review — the table assigns rework there, not to
+the reviewer families), then repeats stages 4–7 against the reworked head:
+both reviewer families review the new diff, CI runs on it, and the evidence
+comment is updated in place before the label is re-applied. A final
+rejection — no rework wanted — closes
 the issue with the rejection notes as the record; no further label
 transition.
 

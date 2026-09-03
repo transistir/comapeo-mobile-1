@@ -65,14 +65,21 @@ REPO=transistir/comapeo-mobile-1
 #   Setup EAS):
 # REPO=transistir/coiab-app
 gh workflow run storybook-capture.yml -R $REPO --ref <branch>
-sleep 15
-# Bind RUN to THIS dispatch: filter by workflow + branch + event. An
-# unfiltered --limit 1 can grab a prior or concurrent run from another
-# branch, and every later step (wait, download, vision verdict) would
-# certify the wrong artifact. Same-branch collisions cannot occur under
-# the one-agent-per-branch policy, but if you ever dispatch twice on one
-# branch, also check the run's createdAt is after your dispatch.
-RUN=$(gh run list -R $REPO --workflow storybook-capture.yml --branch <branch> --event workflow_dispatch --limit 1 --json databaseId -q '.[0].databaseId')
+# Bind RUN to THIS dispatch. Two hazards: an unfiltered --limit 1 can grab
+# a prior or concurrent run from ANOTHER branch (every later step — wait,
+# download, vision verdict — would certify the wrong artifact); and the
+# retry paths in §3/§5 re-dispatch on the SAME branch, where a fixed sleep
+# is not enough — if the new run takes longer than the sleep to register,
+# --limit 1 returns the PREVIOUS, possibly already-completed run and the
+# gate certifies its stale artifacts. So record the dispatch time and poll
+# until a run created after it appears. The timestamp is taken 30 s in the
+# past to tolerate clock skew between the local clock and GitHub's.
+DISPATCH_TS=$(date -u +%Y-%m-%dT%H:%M:%SZ -d '30 seconds ago')
+RUN=""
+until [ -n "$RUN" ]; do
+  RUN=$(gh run list -R $REPO --workflow storybook-capture.yml --branch <branch> --event workflow_dispatch --limit 5 --json databaseId,createdAt -q ".[] | select(.createdAt > \"$DISPATCH_TS\") | .databaseId" | head -1)
+  [ -n "$RUN" ] || sleep 10
+done
 ```
 
 Wait in the background rather than blocking a foreground call for the whole

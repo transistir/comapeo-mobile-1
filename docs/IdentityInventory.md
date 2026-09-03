@@ -37,23 +37,34 @@ identity.
 | App icon | `assets/icon.png` (1024×1024 RGBA) | Solid black background; "CoMapeo" wordmark — "Co" in orange (≈ `#F5A623`), "Mapeo" in white, bold sans-serif |
 | Splash | `assets/splash.png` (1024×1024 RGBA) | Solid black background; cobalt-blue topographic blob (≈ `#1E4FA8`); same "CoMapeo" wordmark centered |
 | In-app logos | `src/frontend/images/CoMapeoLogo.svg`, `CoMapeoShield.svg`, `CoMapeoText.svg`, `TopoLogo.svg` | CoMapeo marks used in onboarding, about, and drawer surfaces |
-| Onboarding copy | `src/frontend/screens/Onboarding/IntroToCoMapeo.tsx`, `DataPrivacy.tsx`, `MapOnYourOwnIntro.tsx` | Screens present the app as CoMapeo |
+| User-visible "CoMapeo" copy | 34 non-test files under `src/frontend/` | Not only onboarding (`IntroToCoMapeo`, `DataPrivacy`, `MapOnYourOwnIntro`): the tracking notification in `hooks/useTracking.ts` ("CoMapeo is tracking your location"), `AuthScreen.tsx`, `CameraView.tsx`, `DrawerMenu.tsx`, the `ComapeoSettings/*` screens, `Observation/Buttons.tsx`, `PhotoPreviewModal/AttachedPhotoPreviewModal.tsx`, and more. Any rebrand pass must sweep all 34, not just onboarding. |
 
 ## 3. Typography
 
-- Single custom family: **Rubik** (`@expo-google-fonts/rubik`, weight
-  `Rubik_500Medium`), loaded in `src/frontend/Navigation/Stack/index.tsx:36`.
-- Four call sites: navigation stack default, `HookFormTextInput`,
-  `HeaderText`, audio screen shared styles.
+- Single custom family: **Rubik** (`@expo-google-fonts/rubik`). `app.json`
+  bundles three weights: `Rubik_400Regular`, `Rubik_500Medium`,
+  `Rubik_600SemiBold`.
+- Seven explicit call sites: `Rubik_500Medium` in
+  `Navigation/Stack/index.tsx:36`, `sharedComponents/HookFormTextInput.tsx`,
+  `sharedComponents/Text/HeaderText.tsx`, `screens/Audio/shared.tsx`; plain
+  `'Rubik'` in `sharedComponents/DescriptionField.tsx`,
+  `sharedComponents/ActionsRow/KeyboardAccessory.tsx`,
+  `screens/ObservationFields/Date.tsx`.
 - Everything else inherits React Native defaults.
-- No typographic scale/token file exists (see gaps).
+- No typographic scale/token module exists (see gaps).
 
 ## 4. Color inventory
 
-There is **no central theme or token file**. Colors live in two places:
+Colors live in three places:
 
-1. `src/frontend/constants.ts` — the five project-card colors, chosen for the
-   COIAB use case during the rebrand:
+1. `src/frontend/lib/styles.ts` — the central palette module: **29 named
+   color constants** (`COMAPEO_BLUE`, `COMAPEO_DARK_BLUE`, `MAGENTA`,
+   `MANGO`, greys, status colors, …), imported by ~157 files. This is the
+   existing token entry point — but it carries the **upstream CoMapeo
+   palette**, not a COIAB one.
+2. `src/frontend/constants.ts` — the five project-card colors, chosen for the
+   COIAB use case during the rebrand (note `LIGHT_ORANGE`/`LIGHT_GREEN` in
+   `styles.ts` duplicate two of these hexes):
 
    | Name | Hex |
    |------|-----|
@@ -63,18 +74,22 @@ There is **no central theme or token file**. Colors live in two places:
    | | `#FBE9E9` (red) |
    | | `#E5E5EB` (grey) |
 
-2. Inline hex literals scattered across `src/frontend/**` (top offenders by
+3. Inline hex literals scattered across `src/frontend/**` (top offenders by
    count: `#FFF5EB` ×6, `#FFFFFF` ×4, `#FF0000` ×4, `#CCE0FF` ×4, `#CCCCD6`
    ×4, `#59A553` ×3, `#3C69F6` ×2, `#0066FF` ×2, plus ~30 more single-use
-   hexes). `App.tsx` wires providers only — there is no `ThemeProvider`, no
-   palette module, nothing for #19 to hook a COIAB theme into.
+   hexes) — these bypass `styles.ts` entirely.
+
+`App.tsx` wires providers only — there is no `ThemeProvider`. The gap is not
+"no token file" (one exists) but "token file is partial and pre-rebrand": no
+typography/spacing tokens, ~40 inline hexes bypass it, and its palette is
+CoMapeo's.
 
 ## 5. Gaps and proposed defaults
 
 | # | Gap | Proposal (default if Figma unavailable) |
 |---|-----|------------------------------------------|
 | 1 | **Figma file URL never recorded** — the canonical design source (per #17) is unlocatable from the board; #53 tracks Figma MCP | Record the link on coiab-app#18 as soon as anyone has it. Until then, treat every visual value in this repo as provisional. |
-| 2 | **No central token file** — colors/typography have no single source of truth, so #19 would have to sed-inline-hexes across ~40 files | Create `src/frontend/theme/coiab.ts` (palette, typography, spacing) as the first commit of #19; migrate call sites incrementally |
+| 2 | **Token module is partial and pre-rebrand** — `lib/styles.ts` (29 colors, ~157 importers) carries the CoMapeo palette, has no typography/spacing tokens, and ~40 inline hexes bypass it | #19 should evolve `lib/styles.ts` in place (swap palette values to COIAB, add typography/spacing tokens) rather than add a parallel module — 157 importers already point there; migrate the inline hexes to it incrementally |
 | 3 | **Visual assets are 100% upstream CoMapeo** (section 2) | Replace icon/splash/logos with COIAB art in #20. Do **not** derive COIAB colors from the current CoMapeo assets. |
 | 4 | **No COIAB brand reference captured** | Public reference points: [coiab.org.br](https://coiab.org.br) (official site) and its logo in official use. Not a substitute for the approved Figma. |
 
@@ -82,8 +97,9 @@ There is **no central theme or token file**. Colors live in two places:
 
 For #19 to have *something* to react to, a starting palette can be taken from
 the five project colors already in `constants.ts` (they were chosen for this
-app, unlike the inline CoMapeo hexes). This is explicitly a placeholder until
-the Figma file is linked — flag any PR that ships these as final.
+app, unlike the CoMapeo palette in `lib/styles.ts`). This is explicitly a
+placeholder until the Figma file is linked — flag any PR that ships these as
+final.
 
 ## 7. What this document is not
 

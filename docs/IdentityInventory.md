@@ -66,7 +66,7 @@ identity.
 
 ## 4. Color inventory
 
-Colors live in three places:
+Colors live in four places:
 
 1. `src/frontend/lib/styles.ts` — the central palette module: **29 named
    color constants** (`COMAPEO_BLUE`, `COMAPEO_DARK_BLUE`, `MAGENTA`,
@@ -96,11 +96,29 @@ Colors live in three places:
    `#CCE0FF` ×4, `#F3F3F3`/`#EAEAEA`/`#CCCCD6`/`#EEEEEE` ×3 (one `#EEE`);
    brand hexes `#59A553` ×2, `#3C69F6` ×2, `#0066FF` ×1; 13 of the 26 occur
    exactly once) — these bypass `styles.ts` entirely.
+4. Colors baked into the SVG assets of `src/frontend/images/**`: **63 of the
+   79 non-logo SVGs** carry at least one literal hex (`CoMapeoLogo.svg` and
+   `TopoLogo.svg` are excluded here — they are the logo assets of section 2,
+   owned by #20): **54 distinct colors over 213 use sites** (case-insensitive,
+   shorthand normalized — `#000` ×13, `#666`/`#999`/`#CCC` ×1 each), led by
+   `#000000` ×26, `#333333` ×16, `#E86826` ×15, `#FFD748`/`#757575` ×11,
+   `#0066FF` ×7. Examples: `OrangeExchange.svg` (`#E86826`),
+   `AddProject.svg`/`DownArrow.svg`/`SendingIcon.svg`/`CheckMark.svg`
+   (`#0066FF`). The SVG palette largely diverges from the TS palette: only
+   `#E86826` exists in `styles.ts` (`DARK_ORANGE`); the next most common —
+   `#FFD748`, `#FFBC47`, `#C86F34`, `#C19B66`, `#804B24`, `#FFCB4B` —
+   appear in no `.ts`/`.tsx` file. These colors live
+   in the artwork itself: no token module can restyle them, they change only
+   when the asset files are replaced. #19 as scoped covers `styles.ts` +
+   inline hexes, not SVG interiors; unless a follow-up issue takes the icon
+   set, the icons keep the upstream CoMapeo palette through the rebrand.
 
 `App.tsx` wires providers only — there is no `ThemeProvider`. The gap is not
 "no token file" (one exists) but "token file is partial and pre-rebrand": no
 typography/spacing tokens, 26 distinct inline hexes (61 use sites, shorthand
-normalized) bypass it, and its palette is CoMapeo's.
+normalized) bypass it, another 54 distinct colors are welded into 63 SVG
+assets that only asset replacement (#20-adjacent) can change, and its
+palette is CoMapeo's.
 
 ## 5. Gaps and proposed defaults
 

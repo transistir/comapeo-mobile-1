@@ -78,10 +78,12 @@ State labels are replaced as the flow advances (`spec-pending` →
 `spec-approved`; final state `ready-for-human-review`).
 
 After a stage-7 rejection, the human removes `ready-for-human-review` and
-re-applies `spec-approved` (the delivery is implemented but not accepted);
-the agent resumes at stage 4 to address the rejection notes. A final
-rejection — no rework wanted — closes the issue with the rejection notes as
-the record; no further label transition.
+re-applies `spec-approved` — or, for SPEC-n/a items (decision records and
+docs), whatever pre-review state the item actually carried — so the delivery
+reads as implemented but not accepted; the agent resumes at stage 4 to
+address the rejection notes. A final rejection — no rework wanted — closes
+the issue with the rejection notes as the record; no further label
+transition.
 
 ## 4. Handoff template
 

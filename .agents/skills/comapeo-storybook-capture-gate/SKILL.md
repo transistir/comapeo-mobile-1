@@ -76,10 +76,14 @@ gh workflow run storybook-capture.yml -R $REPO --ref <branch>
 # past to tolerate clock skew between the local clock and GitHub's.
 DISPATCH_TS=$(date -u +%Y-%m-%dT%H:%M:%SZ -d '30 seconds ago')
 RUN=""
-until [ -n "$RUN" ]; do
+for ATTEMPT in $(seq 1 15); do
   RUN=$(gh run list -R $REPO --workflow storybook-capture.yml --branch <branch> --event workflow_dispatch --limit 5 --json databaseId,createdAt -q ".[] | select(.createdAt > \"$DISPATCH_TS\") | .databaseId" | head -1)
-  [ -n "$RUN" ] || sleep 10
+  [ -n "$RUN" ] && break
+  sleep 10
 done
+# Bounded like §3's retry budget: a dispatch that never registers a run
+# (rejected ref, expired token) must fail loudly, not poll forever.
+[ -n "$RUN" ] || { echo "no run registered within 150s of the dispatch"; exit 1; }
 ```
 
 Wait in the background rather than blocking a foreground call for the whole

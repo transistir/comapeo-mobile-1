@@ -24,7 +24,7 @@ Applied by the rebrand pass; all verified in code on `develop`.
 | Android application ID | `org.coiab` (+ `.rc`/`.pre`/`.dev` variants) | `app.config.js` (`APP_ID_BASE`) |
 
 The naming layer is done and consistent **in the app's runtime identifiers**.
-Two exceptions remain in tooling defaults: `wdio.ios.config.js:30-32` still
+Three exceptions remain in tooling defaults: `wdio.ios.config.js:30-32` still
 targets `CoMapeoRC.app` / bundle ID `com.comapeo.rc` for iOS Appium runs,
 while `app.config.js` resolves the release-candidate iOS bundle to
 `org.coiab.rc` — a rebranded RC build cannot be attached by that config
@@ -33,6 +33,21 @@ until it is migrated. And the local Storybook capture defaults
 `scripts/storybook-capture-all.sh:39` still fall back to `com.comapeo.dev`
 (builds are `org.coiab.dev`); the CI workflow overrides this, but a local
 capture without the override points at a nonexistent pre-rebrand package.
+And the public release pipeline (`.github/workflows/build-release.yml:201-235`)
+still downloads from `https://downloads.comapeo.app/android/release/` and
+publishes a GitHub release titled `CoMapeo v…` with the asset label
+`CoMapeo Android APK` — a rebrand that stops at the app would keep shipping
+CoMapeo-branded public artifacts.
+
+Separately from tooling, two in-app screens still route users to upstream
+properties — behavioral identity surfaces a rendered-copy sweep misses:
+`ComapeoSettings/About.tsx:159-170` opens `https://comapeo.app` (the website
+row and the see-updates button), and
+`ComapeoSettings/EarlyAccess.tsx:102-105` opens and displays
+`feedback@comapeo.app`. Rebranding labels without touching these keeps
+users flowing to CoMapeo properties; they need their own migration line or
+follow-up scope.
+
 The visual layer below is not done either.
 
 ## 2. Visual assets — still upstream CoMapeo
@@ -62,7 +77,14 @@ identity.
   `sharedComponents/ActionsRow/KeyboardAccessory.tsx`,
   `screens/ObservationFields/Date.tsx`.
 - Everything else inherits React Native defaults.
-- No typographic scale/token module exists (see gaps).
+- No centralized typography **token module** exists (see gaps) — but
+  typographic scales DO exist, implemented by the shared text components:
+  `sharedComponents/Text/HeaderText.tsx` exposes six header variants
+  (`header1`–`header6` = 32/24/20/18/16/14 via `fontSizeMap`) and
+  `BodyText.tsx` exposes five body variants (`large`–`tinyMeta` =
+  20/18/16/14/12). What is missing is the tokens/central home, not the
+  scale; #19 should extend these components, not introduce a parallel
+  typographic abstraction.
 
 ## 4. Color inventory
 
@@ -95,16 +117,25 @@ Colors live in four places:
    `#FFF` shorthand), `#000000` ×4 (3 as `#000`), `#FFF5EB`/`#FF0000`/
    `#CCE0FF` ×4, `#F3F3F3`/`#EAEAEA`/`#CCCCD6`/`#EEEEEE` ×3 (one `#EEE`);
    brand hexes `#59A553` ×2, `#3C69F6` ×2, `#0066FF` ×1; 13 of the 26 occur
-   exactly once) — these bypass `styles.ts` entirely.
-4. Colors baked into the SVG assets of `src/frontend/images/**`: **63 of the
-   79 non-logo SVGs** carry at least one literal hex (`CoMapeoLogo.svg` and
-   `TopoLogo.svg` are excluded here — they are the logo assets of section 2,
-   owned by #20): **54 distinct colors over 213 use sites** (case-insensitive,
-   shorthand normalized — `#000` ×13, `#666`/`#999`/`#CCC` ×1 each), led by
-   `#000000` ×26, `#333333` ×16, `#E86826` ×15, `#FFD748`/`#757575` ×11,
+   exactly once) — these bypass `styles.ts` entirely. The same untokenized
+   surface also includes **11 inline `rgba(...)` sites over 6 distinct
+   values** outside `styles.ts` (non-test, non-story):
+   `BottomSheetWrapper.tsx:70`, `MenuListItem.tsx:59`, `ListItemIcon.tsx:26`,
+   `ListItem.tsx:102`, `ListItemText.tsx:53,58`, `IntroToCoMapeo.tsx:141`,
+   `ObservationFilterToggle.tsx:139`, `LanguageSettings.tsx:77,111`,
+   `ObscurePasscode.tsx:69` — a hex-only migration leaves these behind.
+4. Colors baked into the SVG assets of `src/frontend/images/**`: **61 of the
+   77 non-logo SVGs** carry at least one literal hex. All four logo assets
+   of section 2 are excluded here (`CoMapeoLogo.svg`, `CoMapeoShield.svg`,
+   `CoMapeoText.svg`, `TopoLogo.svg` — owned by #20; the shield and text
+   logos carry their own `#E86826`/`#FF9E00` and would otherwise be counted
+   as icon-scope colors): **53 distinct colors over 211 use sites**
+   (case-insensitive, shorthand normalized — `#000` ×13,
+   `#666`/`#999`/`#CCC` ×1 each), led by
+   `#000000` ×26, `#333333` ×16, `#E86826` ×14, `#FFD748`/`#757575` ×11,
    `#0066FF` ×7. Examples: `OrangeExchange.svg` (`#E86826`),
    `AddProject.svg`/`DownArrow.svg`/`SendingIcon.svg`/`CheckMark.svg`
-   (`#0066FF`). Overlap with the token module: 12 of the 54 also exist in
+   (`#0066FF`). Overlap with the token module: 12 of the 53 also exist in
    `styles.ts` (`COMAPEO_BLUE` `#0066FF`, `DARK_ORANGE` `#E86826`,
    `DARK_GREEN` `#59A553`, `SYNC_BACKGROUND` `#2348B2`, and the shared
    greys/black/white/red); the most common **SVG-only** colors —
@@ -117,17 +148,18 @@ Colors live in four places:
 
 `App.tsx` wires providers only — there is no `ThemeProvider`. The gap is not
 "no token file" (one exists) but "token file is partial and pre-rebrand": no
-typography/spacing tokens, 26 distinct inline hexes (61 use sites, shorthand
-normalized) bypass it, another 54 distinct colors are welded into 63 SVG
-assets that only asset replacement (#20-adjacent) can change, and its
-palette is CoMapeo's.
+typography/spacing tokens (the scales themselves exist — `HeaderText` six
+variants, `BodyText` five), 26 distinct inline hexes (61 use sites, shorthand
+normalized) plus 11 `rgba()` sites (6 values) bypass it, another 53 distinct
+colors are welded into 61 SVG assets that only asset replacement
+(#20-adjacent) can change, and its palette is CoMapeo's.
 
 ## 5. Gaps and proposed defaults
 
 | # | Gap | Proposal (default if Figma unavailable) |
 |---|-----|------------------------------------------|
 | 1 | **Figma file URL never recorded** — the canonical design source (per #17) is unlocatable from the board; #53 tracks Figma MCP | Record the link on coiab-app#18 as soon as anyone has it. Until then, treat every visual value in this repo as provisional. |
-| 2 | **Token module is partial and pre-rebrand** — `lib/styles.ts` (29 colors, ~157 importers) carries the CoMapeo palette, has no typography/spacing tokens, and 26 distinct inline hexes bypass it | #19 should evolve `lib/styles.ts` in place (swap palette values to COIAB, add typography/spacing tokens) rather than add a parallel module — 157 importers already point there; migrate the inline hexes to it incrementally |
+| 2 | **Token module is partial and pre-rebrand** — `lib/styles.ts` (29 colors, ~157 importers) carries the CoMapeo palette, has no typography/spacing tokens, and 26 distinct inline hexes plus 11 `rgba()` sites bypass it | #19 should evolve `lib/styles.ts` in place (swap palette values to COIAB, add typography/spacing tokens) rather than add a parallel module — 157 importers already point there; migrate the inline hexes and `rgba()` sites to it incrementally, and extend the existing `HeaderText`/`BodyText` variant scales rather than a parallel typographic abstraction |
 | 3 | **Visual assets are 100% upstream CoMapeo** (section 2) | Replace icon/splash/logos with COIAB art in #20. Do **not** derive COIAB colors from the current CoMapeo assets. |
 | 4 | **No COIAB brand reference captured** | Public reference points: [coiab.org.br](https://coiab.org.br) (official site) and its logo in official use. Not a substitute for the approved Figma. |
 

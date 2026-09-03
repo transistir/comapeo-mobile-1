@@ -23,7 +23,12 @@ Applied by the rebrand pass; all verified in code on `develop`.
 | npm package name | `ekanadyby` | `package.json` |
 | Android application ID | `org.coiab` (+ `.rc`/`.pre`/`.dev` variants) | `app.config.js` (`APP_ID_BASE`) |
 
-Naming layer is done and consistent. The visual layer below is not.
+The naming layer is done and consistent **in the app's runtime identifiers**.
+One exception remains in E2E tooling: `wdio.ios.config.js:30-32` still
+targets `CoMapeoRC.app` / bundle ID `com.comapeo.rc` for iOS Appium runs,
+while `app.config.js` resolves the release-candidate iOS bundle to
+`org.coiab.rc` — a rebranded RC build cannot be attached by that config
+until it is migrated. The visual layer below is not done either.
 
 ## 2. Visual assets — still upstream CoMapeo
 
@@ -34,10 +39,10 @@ identity.
 
 | Asset | Location | Current content |
 |-------|----------|-----------------|
-| App icon | `assets/icon.png` (1024×1024 RGBA) | Solid black background; "CoMapeo" wordmark — "Co" in orange (≈ `#F5A623`), "Mapeo" in white, bold sans-serif |
-| Splash | `assets/splash.png` (1024×1024 RGBA) | Solid black background; cobalt-blue topographic blob (≈ `#1E4FA8`); same "CoMapeo" wordmark centered |
+| App icon | `assets/icon.png` (1024×1024 RGBA) | **Transparent background** (~97.5% of pixels alpha 0 — the black some image viewers show is their own composite, not artwork). "CoMapeo" wordmark — "Co" in orange (≈ `#F5A623`), "Mapeo" in white, bold sans-serif. Android composes it over the `#050F77` adaptive-icon background declared in `app.json`. |
+| Splash | `assets/splash.png` (1024×1024 RGBA) | **Transparent background** (~88% of pixels alpha 0). Cobalt-blue topographic blob (≈ `#1E4FA8`); same "CoMapeo" wordmark centered. `app.json` declares no `expo.splash.backgroundColor` — #20 must pick the splash background explicitly when replacing the art (`#050F77`, the Android adaptive-icon background, is the only background color declared today). |
 | In-app logos | `src/frontend/images/CoMapeoLogo.svg`, `CoMapeoShield.svg`, `CoMapeoText.svg`, `TopoLogo.svg` | CoMapeo marks used in onboarding (`IntroToCoMapeo` = TopoLogo + CoMapeoText, `DataPrivacy` = CoMapeoShield), `AuthScreen` (CoMapeoLogo), and `ComapeoSettings/DataAndPrivacy` (CoMapeoShield) |
-| User-visible "CoMapeo" copy | 34 non-test files under `src/frontend/` | Not only onboarding (`IntroToCoMapeo`, `DataPrivacy`, `MapOnYourOwnIntro`): the tracking notification in `hooks/useTracking.ts` ("CoMapeo is tracking your location"), `AuthScreen.tsx`, `CameraView.tsx`, `DrawerMenu.tsx`, the `ComapeoSettings/*` screens, `Observation/Buttons.tsx`, `PhotoPreviewModal/AttachedPhotoPreviewModal.tsx`, and more. Any rebrand pass must sweep all 34 **plus the runtime copy outside `src/frontend/`** (next row), not just onboarding. |
+| User-visible "CoMapeo" copy | **26 non-test files under `src/frontend/`** (of 37 matching "CoMapeo") | Rendered strings only — not only onboarding (`MapOnYourOwnIntro`, `DataPrivacyMessages`): the tracking notification in `hooks/useTracking.ts` ("CoMapeo is tracking your location"), `sharedComponents/CameraView.tsx`, `sharedComponents/DrawerMenu.tsx`, the `ComapeoSettings/*` screens, `Observation/Buttons.tsx` ("Sent from CoMapeo"), `PhotoPreviewModal/AttachedPhotoPreviewModal.tsx`, `hooks/server/projects.ts` (export filenames `CoMapeo_Tracks`/`CoMapeo_Obsvns`), and more. The other 11 matches are **not copy**: 8 files carry "CoMapeo" only in internal symbols, route names, or story files (`Navigation/Stack/OnboardingScreens.tsx`, `Navigation/Stack/index.tsx`, `constants.ts`, `lib/attachmentTypeChecks.ts`, `sharedTypes/navigation.ts`, `flows/{Onboarding,Sanity,Settings}.stories.tsx`) — rebranding those means identifier/route renames, a separate decision, not a copy sweep; 3 screens reference only the logo assets (`AuthScreen.tsx`, `Onboarding/DataPrivacy.tsx`, `Onboarding/IntroToCoMapeo.tsx` — covered by the logos row above). Any rebrand pass must sweep all 26 **plus the runtime copy outside `src/frontend/`** (next row), not just onboarding. |
 | User-visible "CoMapeo" copy outside `src/frontend/` | `messages/<locale>/{primary,secondary}.json`, `app.json`, `expo-config-plugins/customPermissionText.js` | Three places: (1) translation sources in `messages/` — 8 locales (`en-US`, `es-419`, `pt-BR`, `id-ID`, `fr-FR`, `de-DE`, `nl-NL`, `ja-JP`), `primary.json` + `secondary.json` each, ~560 "CoMapeo" occurrences total (e.g. pt-BR: "Configurações do CoMapeo", "Sobre CoMapeo"). They compile to `translations/*.json` via `npm run build:translations` (`scripts/build-translations.mjs`) and load at runtime through `src/frontend/lib/intl.ts` — edit `messages/`, never the compiled output. The **English catalog is itself generated**: `npm run extract-messages` (`scripts/extract-messages.mjs`) rebuilds `messages/en-US/` from the `defaultMessage` values in `src/frontend`, so English copy is changed by editing `defaultMessage` in source and re-extracting — direct edits to `messages/en-US/*.json` are overwritten on the next extraction. Workflow for a copy change: edit `defaultMessage` in `src/frontend` → `npm run extract-messages` → update the other locales' catalogs in `messages/` → `npm run build:translations`. (2) `app.json` `ios.infoPlist.NSLocalNetworkUsageDescription` ("CoMapeo uses the local network to discover and sync with nearby devices in your project.") — the iOS local-network permission prompt; OS-level, outside the translation pipeline. (3) `expo-config-plugins/customPermissionText.js` (registered at `app.json` plugins) — writes the Android permission prompts during prebuild: `permission_camera_description` "Allow CoMapeo to use the camera?" and the location equivalent "Allow CoMapeo to use location?". |
 
 ## 3. Typography
@@ -77,9 +82,11 @@ Colors live in three places:
    | | `#FBE9E9` (red) |
    | | `#E5E5EB` (grey) |
 
-3. Inline hex literals scattered across `src/frontend/**` (top offenders by
-   case-insensitive count: `#FFF5EB` ×7, `#FFFFFF` ×5, `#FF0000` ×4,
-   `#CCE0FF` ×4, `#CCCCD6` ×4, `#59A553` ×3, `#3C69F6` ×2, `#0066FF` ×2,
+3. Inline hex literals scattered across `src/frontend/**` **outside the two
+   centralized files** (top offenders by case-insensitive count of *uses*,
+   excluding the declarations in `lib/styles.ts`/`constants.ts`, which belong
+   to categories 1–2 above: `#FFFFFF` ×4, `#FF0000` ×4, `#CCE0FF` ×4,
+   `#FFF5EB` ×4, `#CCCCD6` ×3, `#59A553` ×2, `#3C69F6` ×2, `#0066FF` ×1,
    plus ~30 more single-use hexes) — these bypass `styles.ts` entirely.
 
 `App.tsx` wires providers only — there is no `ThemeProvider`. The gap is not

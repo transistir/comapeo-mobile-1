@@ -94,11 +94,18 @@ export function useSeedObservations(count: number, options?: {lang?: string}) {
       // every capture run. Off-sequence observations (created through the UI
       // by a flow story, say) sort last so they never displace seeded ones.
       const maxSeedIndex = existingObservations.length + count;
+      // Precompute each observation's seed rank once: matchSeedIndex is an
+      // O(maxIndex) scan, and calling it inside the sort comparator would
+      // re-run that scan for every one of the O(n log n) comparisons.
+      const rankById = new Map<string, number>();
+      for (const obs of existingObservations) {
+        rankById.set(obs.docId, matchSeedIndex(obs, bbox, maxSeedIndex));
+      }
       const orderedExisting = [...existingObservations].sort((a, b) => {
-        const rankA = matchSeedIndex(a, bbox, maxSeedIndex);
-        const rankB = matchSeedIndex(b, bbox, maxSeedIndex);
+        const rankA = rankById.get(a.docId)!;
+        const rankB = rankById.get(b.docId)!;
         if (rankA !== rankB) return rankA - rankB;
-        return a.docId < b.docId ? -1 : 1;
+        return a.docId < b.docId ? -1 : a.docId > b.docId ? 1 : 0;
       });
       const existingIds = orderedExisting.map(observation => observation.docId);
       const deficit = count - existingIds.length;
